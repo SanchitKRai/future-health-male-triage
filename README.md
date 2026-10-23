@@ -7,8 +7,8 @@ Built as a prototype for the **Future Health Digital Innovation Challenge**. It 
 > **Screening support only.** This is not a diagnosis, a fertility prediction or a replacement for seeing a doctor. Thresholds are design defaults awaiting clinical review, and the model is trained on a simulated population, not real patients.
 
 <p align="center">
-  <img src="docs/screenshot-welcome.png" alt="Welcome screen with screening disclaimer, privacy statement and consent controls" width="48%">
-  <img src="docs/screenshot-questions.png" alt="Step 1 of 4: urgent symptom questions" width="48%">
+  <img src="screenshot-welcome.png" alt="Welcome screen with screening disclaimer, privacy statement and consent controls" width="48%">
+  <img src="screenshot-questions.png" alt="Step 1 of 4: urgent symptom questions" width="48%">
 </p>
 
 ---
