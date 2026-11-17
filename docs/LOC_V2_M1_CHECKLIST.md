@@ -17,9 +17,9 @@
 ## Verification status
 
 - [x] User-confirmed frontend production build passed before the M2 data-contract additions.
-- [ ] Re-run frontend production build after the latest M2 type/validator additions.
-- [ ] GitHub Actions frontend build and unit tests pass on the latest branch commit.
-- [ ] GitHub Actions existing Python regression suite passes on the latest branch commit.
+- [x] Frontend production build passed on the latest M2 branch commit (GitHub Actions).
+- [x] GitHub Actions frontend build and unit tests passed on the latest branch commit.
+- [x] GitHub Actions Python regression suite passed on the latest branch commit (114 tests).
 - [ ] Visual review at desktop width.
 - [ ] Visual review at mobile width.
 - [ ] Test all sidebar routes and mobile menu.
@@ -50,5 +50,4 @@ python -m pytest -q
 
 The frontend currently uses in-memory state only. Do not enter real sensitive health information in this development prototype. Encrypted IndexedDB is not implemented.
 
-M1 remains open until visual review and the latest automated checks pass. Do not merge the draft pull request yet.
-
+The original M1 foundation has been merged into main. Visual review remains outstanding. This follow-on branch adds CI and M2 data contracts; do not treat M1 as visually signed off until the desktop/mobile checks above are complete.

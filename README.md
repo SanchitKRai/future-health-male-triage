@@ -6,12 +6,13 @@
 
 ## LOC V2 — active development
 
-The V2 frontend is being built on the `loc-v2-foundation` branch using React, TypeScript and Vite. The product direction is local-first: no mandatory account, no automatic cloud synchronization and no third-party health-data analytics.
+The V2 frontend uses React, TypeScript and Vite. The guided screening flow is being developed on the `loc-v2-screening-flow` branch. The product direction is local-first: no mandatory account, no automatic cloud synchronization and no third-party health-data analytics.
 
-- Frontend quick start: see [frontend/README.md](frontend/README.md).
+- Frontend and local API quick start: see [frontend/README.md](frontend/README.md).
 - Product roadmap and safeguards: see [docs/LOC_V2_IMPLEMENTATION_PLAN.md](docs/LOC_V2_IMPLEMENTATION_PLAN.md).
-- Data and API boundaries: see [docs/LOC_V2_DATA_AND_API_BOUNDARIES.md](docs/LOC_V2_DATA_AND_API_BOUNDARIES.md).
-- The current V2 foundation is a UI scaffold. Health intake, persistent encrypted storage, API integration and provider navigation are not yet implemented.
+- Local data and API boundaries: see [docs/LOC_V2_DATA_AND_API_BOUNDARIES.md](docs/LOC_V2_DATA_AND_API_BOUNDARIES.md).
+- Screening flow and clinical-engine mapping: see [docs/LOC_V2_SCREENING_FLOW.md](docs/LOC_V2_SCREENING_FLOW.md).
+- The screening API calls the preserved Python rules engine only. The experimental ML second opinion is not yet connected to the React workflow. Encrypted persistent storage and provider integrations are not implemented.
 
 ## Original Streamlit prototype
 
