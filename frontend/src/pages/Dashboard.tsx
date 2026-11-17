@@ -59,7 +59,7 @@ export default function Dashboard() {
             <div><strong>Private and self-paced</strong><span>Skip anything you don't want to answer.</span></div>
             <span className="step-time">~5 min</span>
           </div>
-          <Link to="/screening" className="text-link">Start screening <ArrowRight size={15}/></Link>
+          <span className="dashboard-ready-note">Your private check-in is ready whenever you are.</span>
         </section>
 
         <section className="panel trend-panel">
