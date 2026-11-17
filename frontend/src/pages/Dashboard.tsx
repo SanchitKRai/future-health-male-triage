@@ -1,6 +1,6 @@
 import {
-  ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronRight, ClipboardCheck,
-  Clock3, HeartPulse, LockKeyhole, Plus, ShieldCheck, Sparkles
+  ArrowRight, ArrowUpRight, CalendarDays, Check, ClipboardCheck,
+  Clock3, HeartPulse, LockKeyhole, ShieldCheck, Sparkles
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLocStore } from "../store/useLocStore";
@@ -8,11 +8,14 @@ import SectionHeading from "../components/ui/SectionHeading";
 import StatCard from "../components/dashboard/StatCard";
 
 export default function Dashboard() {
+  const todayLabel = new Intl.DateTimeFormat("en-IN", {
+    weekday: "long", month: "long", day: "numeric"
+  }).format(new Date()).toUpperCase();
   const records = useLocStore((state) => state.records);
 
   return (
     <div className="dashboard-page">
-      <SectionHeading eyebrow="TUESDAY, NOVEMBER 17" title="Your health, on your terms."
+      <SectionHeading eyebrow={todayLabel} title="Your health, on your terms."
         description="A private space to understand your health and decide what comes next."
         action={<span className="secure-chip"><LockKeyhole size={14}/> Private workspace</span>} />
 
