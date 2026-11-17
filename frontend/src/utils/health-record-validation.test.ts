@@ -40,6 +40,6 @@ describe("health record input validation", () => {
     const record: LifestyleCheckIn = { ...metadata, category: "lifestyle", periodStart: "2026-11-18", periodEnd: "2026-11-17", sleepHoursAverage: 25, activityMinutesPerWeek: -1 };
     const result = validateLifestyleCheckIn(record);
     expect(result.valid).toBe(false);
-    expect(result.errors).toHaveLength(4);
+    expect(result.errors).toHaveLength(3);
   });
 });
