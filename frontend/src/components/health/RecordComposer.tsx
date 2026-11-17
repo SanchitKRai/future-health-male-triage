@@ -2,10 +2,10 @@ import { FormEvent, useMemo, useState } from "react";
 import { Activity, Beaker, BriefcaseBusiness, CalendarDays, Check, ClipboardList, X } from "lucide-react";
 import type {
   HealthRecord, LabResultRecord, LifestyleCheckIn, OccupationalExposureRecord, VitalRecord,
-} from "../types/health-records";
+} from "../../types/health-records";
 import {
   validateExposureRecord, validateLabResult, validateLifestyleCheckIn, validateVitalRecord,
-} from "../utils/health-record-validation";
+} from "../../utils/health-record-validation";
 
 type RecordKind = "lab" | "vital" | "lifestyle" | "exposure";
 type ResultKind = "numeric" | "text";
