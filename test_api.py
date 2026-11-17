@@ -1,7 +1,7 @@
 """Regression tests for mapping the V2 form into the preserved triage engine."""
 from pydantic import ValidationError
 
-from api.main import screen
+from api.main import root, screen
 from api.schemas import ConsentInput, ScreeningSubmission
 from api.intake import build_intake
 from triage import Triage
@@ -13,6 +13,13 @@ def consent():
         screening_acknowledged=True,
         session_processing_consent=True,
     )
+
+
+def test_api_root_explains_available_local_routes():
+    response = root()
+    assert response["status"] == "ok"
+    assert response["health_check"] == "/api/health"
+    assert response["screening_endpoint"] == "/api/screening/triage"
 
 
 def test_consent_and_age_gate_stops_without_scoring():
