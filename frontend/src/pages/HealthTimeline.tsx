@@ -10,10 +10,9 @@ import SectionHeading from "../components/ui/SectionHeading";
 import RecordComposer from "../components/health/RecordComposer";
 import { useLocStore } from "../store/useLocStore";
 import type { HealthRecord, HealthRecordCategory, VitalRecord } from "../types/health-records";
+import { buildTrendMetrics } from "../utils/health-timeline";
 
 type FilterKind = "all" | HealthRecordCategory;
-interface TrendPoint { date: string; value: number; label: string; }
-interface TrendMetric { key: string; label: string; unit: string; points: TrendPoint[]; }
 
 function recordDate(record: HealthRecord): string {
   if (record.category === "lab") return record.collectedOn;
@@ -67,26 +66,6 @@ function categoryIcon(category: HealthRecordCategory) {
   return { lab: Beaker, vital: Activity, lifestyle: ClipboardList, exposure: BriefcaseBusiness }[category];
 }
 
-function buildTrendMetrics(records: HealthRecord[]): TrendMetric[] {
-  const groups = new Map<string, TrendMetric>();
-  for (const record of records) {
-    let key: string; let label: string; let unit: string; let value: number; let date: string;
-    if (record.category === "lab" && record.value.kind === "numeric") {
-      key = `lab:${record.testName.toLocaleLowerCase()}:${record.value.unit}`;
-      label = record.testName; unit = record.value.unit; value = record.value.value; date = record.collectedOn;
-    } else if (record.category === "vital") {
-      key = `vital:${record.measurement.type}:${record.measurement.unit}`;
-      label = vitalLabel(record); unit = record.measurement.unit; value = record.measurement.value; date = record.recordedAt.slice(0, 10);
-    } else continue;
-    const group = groups.get(key) ?? { key, label, unit, points: [] };
-    group.points.push({ date, value, label: formatDate(date) });
-    groups.set(key, group);
-  }
-  return [...groups.values()]
-    .map((metric) => ({ ...metric, points: metric.points.sort((a, b) => a.date.localeCompare(b.date)) }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-}
-
 function downloadRecords(records: HealthRecord[]) {
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -120,9 +99,6 @@ export default function HealthTimeline() {
   function removeRecord(record: HealthRecord) {
     if (!window.confirm(`Remove this ${categoryLabel(record.category).toLowerCase()} record from the current session?`)) return;
     deleteRecord(record.id);
-    if (record.category === "lab" || record.category === "vital") {
-      // The selected trend is derived from records; it will fall back if this metric no longer exists.
-    }
   }
 
   return (
