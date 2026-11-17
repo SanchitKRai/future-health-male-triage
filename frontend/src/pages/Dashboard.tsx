@@ -7,8 +7,6 @@ import { useLocStore } from "../store/useLocStore";
 import SectionHeading from "../components/ui/SectionHeading";
 import StatCard from "../components/dashboard/StatCard";
 
-const sampleTrend = [34, 46, 39, 55, 49, 62, 52, 68, 59, 73, 66, 81];
-
 export default function Dashboard() {
   const records = useLocStore((state) => state.records);
 
