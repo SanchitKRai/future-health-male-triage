@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateLabResult, validateLifestyleCheckIn, validateVitalRecord } from "./health-record-validation";
-import type { LabResultRecord, LifestyleCheckIn, VitalRecord } from "../types/health-records";
+import { validateExposureRecord, validateLabResult, validateLifestyleCheckIn, validateVitalRecord } from "./health-record-validation";
+import type { LabResultRecord, LifestyleCheckIn, OccupationalExposureRecord, VitalRecord } from "../types/health-records";
 
 const metadata = { id: "record-1", recordedAt: "2026-11-17T12:00:00.000Z", source: "manual" as const };
 
@@ -23,6 +23,17 @@ describe("health record input validation", () => {
   it("accepts a positive vital measurement", () => {
     const record: VitalRecord = { ...metadata, category: "vital", measurement: { type: "weight", value: 72, unit: "kg" } };
     expect(validateVitalRecord(record).valid).toBe(true);
+  });
+
+  it("rejects negative occupational exposure duration", () => {
+    const record: OccupationalExposureRecord = {
+      ...metadata,
+      category: "exposure",
+      exposureType: "heat",
+      frequency: "weekly",
+      durationMonths: -3,
+    };
+    expect(validateExposureRecord(record).valid).toBe(false);
   });
 
   it("rejects invalid lifestyle periods and values", () => {
