@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, CircleAlert, Clock3, Download,
   LockKeyhole, ShieldAlert, ShieldCheck, Sparkles
@@ -190,6 +190,7 @@ function displayAnswer(value: ScreeningAnswer | undefined): string {
 }
 
 export default function Screening() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("consent");
   const [consent, setConsent] = useState<ScreeningConsent>(INITIAL_CONSENT);
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
@@ -435,15 +436,17 @@ export default function Screening() {
                 <p>{outcome?.explanation ?? "The existing screening rules have returned a result."}</p>
               </div>
               <div className="screen-result-actions"><h3>Suggested next steps</h3><ol>{(outcome?.steps ?? []).map((item) => <li key={item}>{item}</li>)}</ol></div>
-              {result.low_confidence && <div className="screen-alert screen-alert-warn"><CircleAlert size={18}/><div><strong>Limited answers</strong><span>This result is based on limited information. The existing rules use a cautious pathway when many optional answers are missing.</span></div></div>}
-              {result.safety_net && <div className="screen-alert screen-alert-warn"><CircleAlert size={18}/><div><strong>Some urgent symptom questions were skipped</strong><span>This screening cannot rule out an urgent problem when those answers are missing. Seek immediate care for sudden severe testicular pain, sudden swelling, fever with pain or swelling, a painful erection lasting over 4 hours, or a groin injury with swelling. A new lump, blood in semen or persistent ache also needs prompt medical assessment.</span></div></div>}
-              {result.top_factors.length > 0 && <div className="screen-factor-panel"><h3>What shaped this rules-based result</h3><p>These are factors you reported that the written rules considered. They are not diagnoses or proof of causation.</p><ul>{result.top_factors.map((factor) => <li key={factor.id}><span>{factor.label}</span><small>{factor.modifiable ? "Can be changed" : "Cannot be changed"}</small></li>)}</ul></div>}
-              <div className="screen-model-note"><Sparkles size={16}/><span>This V2 screening workflow used the existing deterministic rules engine. The experimental ML second opinion and SHAP explanations are not connected to this workflow yet.</span></div>
+              {!isEmergency && result.low_confidence && <div className="screen-alert screen-alert-warn"><CircleAlert size={18}/><div><strong>Limited answers</strong><span>This result is based on limited information. The existing rules use a cautious pathway when many optional answers are missing.</span></div></div>}
+              {!isEmergency && result.safety_net && <div className="screen-alert screen-alert-warn"><CircleAlert size={18}/><div><strong>Some urgent symptom questions were skipped</strong><span>This screening cannot rule out an urgent problem when those answers are missing. Seek immediate care for sudden severe testicular pain, sudden swelling, fever with pain or swelling, a painful erection lasting over 4 hours, or a groin injury with swelling. A new lump, blood in semen or persistent ache also needs prompt medical assessment.</span></div></div>}
+              {!isEmergency && result.top_factors.length > 0 && <div className="screen-factor-panel"><h3>What shaped this rules-based result</h3><p>These are factors you reported that the written rules considered. They are not diagnoses or proof of causation.</p><ul>{result.top_factors.map((factor) => <li key={factor.id}><span>{factor.label}</span><small>{factor.modifiable ? "Can be changed" : "Cannot be changed"}</small></li>)}</ul></div>}
+              {!isEmergency && <div className="screen-model-note"><Sparkles size={16}/><span>This V2 screening workflow used the existing deterministic rules engine. The experimental ML second opinion and SHAP explanations are not connected to this workflow yet.</span></div>}
             </>
           )}
           <div className="screen-actions screen-result-footer">
             {!isEmergency && result.status === "result" && <button className="button button-secondary" onClick={downloadSummary}><Download size={15}/> Download clinician summary</button>}
-            <button className="button button-primary" onClick={resetScreening}>Clear answers and start again <ArrowRight size={16}/></button>
+            {isEmergency
+              ? <button className="button button-secondary" onClick={() => { resetScreening(); navigate("/"); }}>Clear answers and return to overview</button>
+              : <button className="button button-primary" onClick={resetScreening}>Clear answers and start again <ArrowRight size={16}/></button>}
           </div>
           <div className="screen-final-disclaimer"><ShieldCheck size={15}/><span>LOC is screening and care-navigation support only. It is not a diagnosis, medical advice or a replacement for an in-person clinician. If symptoms are severe or worsening, seek appropriate medical care.</span></div>
         </div>
