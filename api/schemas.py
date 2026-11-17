@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from api.constants import MEDICATION_OPTIONS, MEDICATION_PREFER_NOT, MEDICATION_NONE
 
