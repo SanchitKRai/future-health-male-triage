@@ -4,7 +4,7 @@ React + TypeScript + Vite interface scaffold for the Future Health / LOC men's h
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22.12 or newer (required by the selected Vite toolchain)
 - npm
 
 ## Run locally
