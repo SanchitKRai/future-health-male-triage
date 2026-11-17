@@ -1,4 +1,4 @@
-import type { HealthRecord, LabResultRecord, LifestyleCheckIn, VitalRecord } from "../types/health-records";
+import type { HealthRecord, LabResultRecord, LifestyleCheckIn, OccupationalExposureRecord, VitalRecord } from "../types/health-records";
 
 export interface ValidationResult { valid: boolean; errors: string[]; }
 
@@ -59,6 +59,14 @@ export function validateLifestyleCheckIn(record: LifestyleCheckIn): ValidationRe
   }
   if (record.activityMinutesPerWeek !== undefined && (!Number.isFinite(record.activityMinutesPerWeek) || record.activityMinutesPerWeek < 0)) {
     errors.push("Weekly activity minutes cannot be negative.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateExposureRecord(record: OccupationalExposureRecord): ValidationResult {
+  const errors = validMetadata(record);
+  if (record.durationMonths !== undefined && (!Number.isFinite(record.durationMonths) || record.durationMonths < 0)) {
+    errors.push("Exposure duration in months cannot be negative.");
   }
   return { valid: errors.length === 0, errors };
 }
