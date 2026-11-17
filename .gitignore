@@ -7,3 +7,7 @@ __pycache__/
 .env.*
 !.env.example
 *.log
+
+# LOC V2 frontend
+node_modules/
+frontend/dist/
