@@ -33,7 +33,7 @@ npm install
 npm run dev
 ```
 
-Open the local address printed by Vite (normally `http://127.0.0.1:5173`).
+Open the local address printed by Vite (normally `http://127.0.0.1:5173`). This is the LOC user interface.\n\nYou can verify the API separately at `http://127.0.0.1:8000/` (service summary) or `http://127.0.0.1:8000/api/health` (health check). The API root is not the React application.
 
 Optional API origin override: copy `.env.example` to `.env.local` and change `VITE_LOC_API_URL`. Keep it pointed at a trusted local service. Do not point health submissions to a public or third-party endpoint.
 
