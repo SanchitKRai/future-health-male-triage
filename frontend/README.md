@@ -63,6 +63,9 @@ python -m pytest -q
 - Python API maps submitted fields into the existing `triage.Intake` dataclass and calls the existing `evaluate()` rules engine
 - Result page shows the rules-based outcome, timeframe, safety-net messages and factors returned by the rules
 - User-initiated clinician summary download
+- Health timeline with manual lab, vital, lifestyle and occupational exposure entries
+- Category filters, user-requested JSON export and per-record deletion
+- Measurement trend charts only for matching metric names and units
 - In-memory browser state only; no localStorage, IndexedDB or cloud persistence
 
 ## Clinical and privacy boundaries
@@ -75,6 +78,6 @@ python -m pytest -q
 - The local API binds to loopback only when launched with `python -m api`; do not expose it to a LAN or public network.
 - Request/response caching is disabled and Uvicorn access logs are disabled in the provided entry point. No health payload is written to a database, file, browser storage or application log.
 - Do not enter real health information on a shared or untrusted device. Browser memory and a localhost service are not a substitute for a security audit.
-- Encrypted persistent storage, ML integration, lab-record UI and provider navigation are separate future milestones.
+- Encrypted persistent storage, ML integration and provider navigation are separate future milestones.
 
 This remains a research and demonstration prototype. Its thresholds are design defaults awaiting independent clinician review, and the ML model is trained on simulated data rather than real patients.

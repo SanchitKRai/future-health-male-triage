@@ -12,7 +12,7 @@ The V2 frontend uses React, TypeScript and Vite. The guided screening flow has b
 - Product roadmap and safeguards: see [docs/LOC_V2_IMPLEMENTATION_PLAN.md](docs/LOC_V2_IMPLEMENTATION_PLAN.md).
 - Local data and API boundaries: see [docs/LOC_V2_DATA_AND_API_BOUNDARIES.md](docs/LOC_V2_DATA_AND_API_BOUNDARIES.md).
 - Screening flow and clinical-engine mapping: see [docs/LOC_V2_SCREENING_FLOW.md](docs/LOC_V2_SCREENING_FLOW.md).
-- The screening API calls the preserved Python rules engine only. The experimental ML second opinion is not yet connected to the React workflow. Encrypted persistent storage and provider integrations are not implemented.
+- The screening API calls the preserved Python rules engine only. The experimental ML second opinion is not yet connected to the React workflow. The health timeline supports manually entered lab, vital, lifestyle and workplace exposure records in memory only; encrypted persistent storage and provider integrations are not implemented.
 
 ## Original Streamlit prototype
 

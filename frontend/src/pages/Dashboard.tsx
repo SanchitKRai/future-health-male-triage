@@ -12,6 +12,9 @@ export default function Dashboard() {
     weekday: "long", month: "long", day: "numeric"
   }).format(new Date()).toUpperCase();
   const records = useLocStore((state) => state.records);
+  const newestRecord = records[0];
+  const timelineTitle = !newestRecord ? "No health records yet" : newestRecord.category === "lab" ? newestRecord.testName : newestRecord.category === "vital" ? "Latest vital measurement" : newestRecord.category === "lifestyle" ? "Latest lifestyle check-in" : "Latest workplace exposure";
+  const timelineDetail = !newestRecord ? "Add a lab result or health measurement to begin seeing your history in one place." : newestRecord.category === "lab" ? (newestRecord.value.kind === "numeric" ? `${newestRecord.value.value} ${newestRecord.value.unit}` : newestRecord.value.value) : newestRecord.category === "vital" ? `${newestRecord.measurement.value} ${newestRecord.measurement.unit}` : "Open your timeline to review this session record.";
 
   return (
     <div className="dashboard-page">
@@ -64,12 +67,12 @@ export default function Dashboard() {
 
         <section className="panel trend-panel">
           <div className="panel-heading">
-            <div><div className="eyebrow">HEALTH OVER TIME</div><h3>Your timeline starts here</h3></div>
+            <div><div className="eyebrow">HEALTH OVER TIME</div><h3>Your health timeline</h3></div>
             <span className="panel-icon panel-icon-soft"><HeartPulse size={19}/></span>
           </div>
           <div className="empty-timeline">
             <div className="timeline-illustration"><div className="timeline-line"/><div className="timeline-dot dot-a"/><div className="timeline-dot dot-b"/><div className="timeline-dot dot-c"/></div>
-            <div><strong>No health records yet</strong><span>Add a lab result or health measurement to begin seeing your history in one place.</span></div>
+            <div><strong>{timelineTitle}</strong><span>{timelineDetail}</span></div>
           </div>
           <Link to="/timeline" className="text-link">Explore health timeline <ArrowRight size={15}/></Link>
         </section>
