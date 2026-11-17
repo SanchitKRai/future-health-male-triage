@@ -35,7 +35,6 @@ export default function AppShell() {
               className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}>
               <Icon size={18} strokeWidth={1.8} />
               <span>{label}</span>
-              {label === "Health screening" && <span className="nav-dot" />}
             </NavLink>
           ))}
         </nav>
