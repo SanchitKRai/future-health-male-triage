@@ -127,7 +127,7 @@ export default function HealthTimeline() {
         </div>
       </div>
 
-      {showComposer && <RecordComposer onAdd={(record) => { addRecord(record); setShowComposer(false); }} onCancel={() => setShowComposer(false)}/ >}
+      {showComposer && <RecordComposer onAdd={(record) => { addRecord(record); setShowComposer(false); }} onCancel={() => setShowComposer(false)}/>}
 
       {metrics.length > 0 && (
         <section className="timeline-panel trend-chart-panel">
