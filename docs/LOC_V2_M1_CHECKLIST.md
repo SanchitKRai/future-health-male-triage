@@ -17,9 +17,9 @@
 ## Verification status
 
 - [x] User-confirmed frontend production build passed before the M2 data-contract additions.
-- [ ] Re-run frontend production build after the latest M2 type/validator additions.
-- [ ] GitHub Actions frontend build and unit tests pass on this follow-on branch.
-- [ ] GitHub Actions existing Python regression suite passes on this follow-on branch.
+- [x] Frontend production build passed on the latest M2 branch commit (GitHub Actions).
+- [x] GitHub Actions frontend build and unit tests passed on the latest branch commit.
+- [x] GitHub Actions Python regression suite passed on the latest branch commit (114 tests).
 - [ ] Visual review at desktop width.
 - [ ] Visual review at mobile width.
 - [ ] Test all sidebar routes and mobile menu.
