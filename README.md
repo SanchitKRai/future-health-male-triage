@@ -1,5 +1,23 @@
-# Private Men's Health Check
+# LOC — Men's Health Screening & Care Navigation
 
+**A privacy-first, explainable men's health screening and care-navigation prototype.** LOC helps users organise relevant health context, understand screening pathways and prepare for conversations with qualified healthcare professionals.
+
+> **Clinical boundary:** LOC supports screening and navigation only. It does not diagnose, predict fertility, prescribe treatment or replace a clinician. Existing clinical thresholds are design defaults awaiting independent clinical review. The ML second opinion uses simulated data and is not clinically validated.
+
+## LOC V2 — active development
+
+The V2 frontend is being built on the `loc-v2-foundation` branch using React, TypeScript and Vite. The product direction is local-first: no mandatory account, no automatic cloud synchronization and no third-party health-data analytics.
+
+- Frontend quick start: see [frontend/README.md](frontend/README.md).
+- Product roadmap and safeguards: see [docs/LOC_V2_IMPLEMENTATION_PLAN.md](docs/LOC_V2_IMPLEMENTATION_PLAN.md).
+- Data and API boundaries: see [docs/LOC_V2_DATA_AND_API_BOUNDARIES.md](docs/LOC_V2_DATA_AND_API_BOUNDARIES.md).
+- The current V2 foundation is a UI scaffold. Health intake, persistent encrypted storage, API integration and provider navigation are not yet implemented.
+
+## Original Streamlit prototype
+
+The original Streamlit application and Python clinical/ML modules remain preserved at the repository root. The current V2 work does not replace or modify those clinical modules.
+
+# Legacy Streamlit application
 **A private, rules-first screening tool that tells a man whether a check-up, a specialist visit, a fertility assessment or no visit at all makes sense, and how soon.**
 
 Built as a prototype for the **Future Health Digital Innovation Challenge**. It runs as a [Streamlit](https://streamlit.io) app, keeps answers in the browser session only, and uses simulated data for its machine-learning second opinion.
