@@ -6,7 +6,7 @@
 
 ## LOC V2 — active development
 
-The V2 frontend uses React, TypeScript and Vite. The guided screening flow is being developed on the `loc-v2-screening-flow` branch. The product direction is local-first: no mandatory account, no automatic cloud synchronization and no third-party health-data analytics.
+The V2 frontend uses React, TypeScript and Vite. The guided screening flow has been merged into `main`; follow-up UI refinements are tracked separately. The product direction is local-first: no mandatory account, no automatic cloud synchronization and no third-party health-data analytics.
 
 - Frontend and local API quick start: see [frontend/README.md](frontend/README.md).
 - Product roadmap and safeguards: see [docs/LOC_V2_IMPLEMENTATION_PLAN.md](docs/LOC_V2_IMPLEMENTATION_PLAN.md).
