@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, CircleAlert, Clock3, Download,
   LockKeyhole, ShieldAlert, ShieldCheck, Sparkles
@@ -190,6 +190,7 @@ function displayAnswer(value: ScreeningAnswer | undefined): string {
 }
 
 export default function Screening() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("consent");
   const [consent, setConsent] = useState<ScreeningConsent>(INITIAL_CONSENT);
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
@@ -443,7 +444,9 @@ export default function Screening() {
           )}
           <div className="screen-actions screen-result-footer">
             {!isEmergency && result.status === "result" && <button className="button button-secondary" onClick={downloadSummary}><Download size={15}/> Download clinician summary</button>}
-            <button className="button button-primary" onClick={resetScreening}>Clear answers and start again <ArrowRight size={16}/></button>
+            {isEmergency
+              ? <button className="button button-secondary" onClick={() => { resetScreening(); navigate("/"); }}>Clear answers and return to overview</button>
+              : <button className="button button-primary" onClick={resetScreening}>Clear answers and start again <ArrowRight size={16}/></button>}
           </div>
           <div className="screen-final-disclaimer"><ShieldCheck size={15}/><span>LOC is screening and care-navigation support only. It is not a diagnosis, medical advice or a replacement for an in-person clinician. If symptoms are severe or worsening, seek appropriate medical care.</span></div>
         </div>
