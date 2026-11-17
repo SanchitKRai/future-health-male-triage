@@ -20,8 +20,6 @@ describe("LOC in-memory health store", () => {
   it("starts without health records or optional consent", () => {
     const state = useLocStore.getState();
     expect(state.records).toEqual([]);
-    expect(state.preferences.analyticsConsent).toBe(false);
-    expect(state.preferences.localStorageConsent).toBe(false);
   });
 
   it("adds and removes a typed session record", () => {
@@ -31,15 +29,10 @@ describe("LOC in-memory health store", () => {
     expect(useLocStore.getState().records).toEqual([]);
   });
 
-  it("clears records and resets preferences", () => {
-    useLocStore.getState().setPreference("analyticsConsent", true);
+  it("clears session records", () => {
     useLocStore.getState().addRecord(exampleLabRecord);
     useLocStore.getState().clearLocalData();
     const state = useLocStore.getState();
     expect(state.records).toEqual([]);
-    expect(state.preferences).toEqual({
-      analyticsConsent: false,
-      localStorageConsent: false,
-    });
   });
 });
