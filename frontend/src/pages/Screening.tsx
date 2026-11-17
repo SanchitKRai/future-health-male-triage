@@ -345,7 +345,7 @@ export default function Screening() {
         <div className="screen-card">
           <div className="screen-group-heading"><h2>About you</h2><p>These details provide context for the existing rules. Height and weight are used only to calculate BMI for this check and are not retained.</p></div>
           <div className="screen-form-section">
-            <span className="screen-field-label">Are you currently trying to conceive?</span>
+            <span className="screen-field-label">Are you, or is anyone you are with, trying to conceive?</span>
             <div className="screen-stack-options">
               {([{ value: "now", label: "Yes, we are trying now" }, { value: "within_year", label: "Planning to within the next year" }, { value: "not_planning", label: "Not planning to" }, { value: "prefer_not", label: "Prefer not to say" }] as const).map((option) => (
                 <label key={option.value} className={`screen-select-option ${profile.trying === option.value ? "screen-select-option-active" : ""}`}><input type="radio" name="trying" checked={profile.trying === option.value} onChange={() => setProfileField("trying", option.value)}/><span>{option.label}</span></label>
@@ -412,7 +412,7 @@ export default function Screening() {
           </div>
           <div className="screen-review-section"><div className="screen-review-heading"><h3>Medical history</h3><button onClick={() => setStep("history")}>Edit</button></div>{HISTORY_GROUPS.flatMap((group) => group.questions).map((question) => <ReviewRow key={question.key} label={question.prompt} value={displayAnswer(answers[question.key])}/>)}</div>
           <div className="screen-review-section"><div className="screen-review-heading"><h3>Health and lifestyle</h3><button onClick={() => setStep("lifestyle")}>Edit</button></div>{LIFESTYLE_GROUPS.flatMap((group) => group.questions).map((question) => <ReviewRow key={question.key} label={question.prompt} value={displayAnswer(answers[question.key])}/>)}
-            <ReviewRow label="Alcohol" value={profile.alcohol || "Skipped"}/><ReviewRow label="Medicines" value={profile.medications.length ? profile.medications.join(", ") : "Skipped"}/>
+            <ReviewRow label="Alcohol" value={profile.alcohol === "none" ? "I don’t drink alcohol" : profile.alcohol === "occasional" ? "Occasionally (1 to 7 drinks a week)" : profile.alcohol === "regular" ? "Regularly (8 to 14 drinks a week)" : profile.alcohol === "heavy" ? "Heavily (15 or more drinks a week)" : profile.alcohol === "prefer_not" ? "Prefer not to say" : "Skipped"}/><ReviewRow label="Medicines" value={profile.medications.length ? profile.medications.join(", ") : "Skipped"}/>
           </div>
           {error && <div className="screen-alert screen-alert-danger" role="alert"><CircleAlert size={18}/><div><strong>Unable to complete screening</strong><span>{error}</span></div></div>}
           <div className="screen-actions"><button className="button button-secondary" onClick={() => setStep("lifestyle")}><ArrowLeft size={15}/> Back</button><button className="button button-primary" disabled={loading || !profileReady} onClick={evaluateScreening}>{loading ? "Evaluating locally…" : "Get my screening result"} <ArrowRight size={16}/></button></div>
