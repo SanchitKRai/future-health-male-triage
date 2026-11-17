@@ -332,6 +332,7 @@ export default function Screening() {
           {!hasEmergencyFlag && hasPromptFlag && (
             <div className="screen-alert screen-alert-warn" role="status"><CircleAlert size={20}/><div><strong>This should be assessed promptly.</strong><span>A new lump, blood in semen or a persistent ache should be checked in person within the next few days.</span></div></div>
           )}
+          {error && <div className="screen-alert screen-alert-danger" role="alert"><CircleAlert size={18}/><div><strong>Unable to complete screening</strong><span>{error}</span></div></div>}
           <div className="screen-actions">
             <button className="button button-secondary" onClick={() => setStep("consent")}><ArrowLeft size={15}/> Back</button>
             {hasEmergencyFlag || hasPromptFlag
@@ -407,6 +408,7 @@ export default function Screening() {
             <ReviewRow label="Age" value={profile.age ? `${profile.age} years` : "Skipped"}/>
             <ReviewRow label="Trying to conceive" value={profile.trying === "now" ? "Trying now" : profile.trying === "within_year" ? "Planning within a year" : profile.trying === "not_planning" ? "Not planning to" : "Skipped / prefer not to say"}/>
             {profile.trying === "now" && <ReviewRow label="Months trying" value={profile.monthsTrying || "Skipped"}/>}
+            {profile.trying === "now" && <ReviewRow label="Partner aged 35 or over" value={displayAnswer(profile.partner35Plus)}/>}
             {profile.heightCm && <ReviewRow label="Height" value={`${profile.heightCm} cm`}/>}
             {profile.weightKg && <ReviewRow label="Weight" value={`${profile.weightKg} kg`}/>}
           </div>
