@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Activity, ArrowDownToLine, ArrowUpRight, Beaker, BriefcaseBusiness, CalendarDays,
+  Activity, ArrowDownToLine, Beaker, BriefcaseBusiness, CalendarDays,
   ClipboardList, FilePlus2, HeartPulse, ListFilter, ShieldCheck, Trash2,
 } from "lucide-react";
 import {
@@ -9,7 +9,7 @@ import {
 import SectionHeading from "../components/ui/SectionHeading";
 import RecordComposer from "../components/health/RecordComposer";
 import { useLocStore } from "../store/useLocStore";
-import type { HealthRecord, HealthRecordCategory, LabResultRecord, VitalRecord } from "../types/health-records";
+import type { HealthRecord, HealthRecordCategory, VitalRecord } from "../types/health-records";
 
 type FilterKind = "all" | HealthRecordCategory;
 interface TrendPoint { date: string; value: number; label: string; }
