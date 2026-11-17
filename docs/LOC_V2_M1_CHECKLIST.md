@@ -1,48 +1,54 @@
-# LOC V2 — Milestone 1 checklist
+# LOC V2 — Milestone 1 verification checklist
 
-## Implemented in this branch
+## Implemented
 
-- [x] Isolated React + TypeScript + Vite app under `frontend/`
+- [x] Isolated React + TypeScript + Vite app under frontend/
 - [x] Responsive navigation and application shell
 - [x] Overview dashboard
-- [x] Placeholder routes that clearly identify future modules
-- [x] Local in-memory state store
-- [x] Privacy centre with explicit current capabilities
-- [x] Export and clear-session actions
-- [x] No external font imports or health-data network calls
-- [x] Existing Python triage, ML, cohort and test files left untouched
-- [x] Product roadmap and local-data/API boundary documentation
+- [x] Explicit routes for screening, timeline, insights and care navigation
+- [x] In-memory state store only
+- [x] Privacy centre with session export and clear-session controls
+- [x] No third-party font request or health-data network call in the frontend scaffold
+- [x] Existing Python triage, ML, cohort and test files preserved
+- [x] Product roadmap and local data/API boundaries
+- [x] GitHub Actions CI for frontend and Python regression checks
+- [x] Unit tests for in-memory store and structured health-record validation
 
-## Required local verification
+## Verification status
 
-Run from the repository root:
+- [x] User-confirmed frontend production build passed before the M2 data-contract additions.
+- [ ] Re-run frontend production build after the latest M2 type/validator additions.
+- [ ] GitHub Actions frontend build and unit tests pass on this follow-on branch.
+- [ ] GitHub Actions existing Python regression suite passes on this follow-on branch.
+- [ ] Visual review at desktop width.
+- [ ] Visual review at mobile width.
+- [ ] Test all sidebar routes and mobile menu.
+- [ ] Verify privacy export downloads JSON.
+- [ ] Verify clear-session asks for confirmation and clears the in-memory store.
+- [ ] Inspect browser Network panel for unexpected external requests.
+- [ ] Verify keyboard focus and reduced-motion behaviour.
+
+## Local verification
+
+From the repository root:
 
 ```bash
 cd frontend
 npm install
 npm run build
+npm test
 npm run dev
 ```
 
-Then manually verify:
-- [ ] Dashboard renders at desktop and mobile widths
-- [ ] Each sidebar link opens the expected route
-- [ ] Mobile menu opens and closes
-- [ ] Privacy export downloads JSON
-- [ ] Clear-session action asks for confirmation and clears state
-- [ ] Browser devtools Network panel shows no health-data request or third-party font request
-- [ ] Keyboard focus is visible and reduced-motion preferences are respected
-
-Run the preserved Python regression suite from the repository root:
+In another terminal, run the original Python regression suite:
 
 ```bash
-python -m pytest
+python -m pytest -q
 ```
 
-## Validation status
+## Important
 
-The source scaffold has been statically reviewed. A production build and browser-level test have not been run in this environment because this session could not fetch the repository into a local build workspace or install npm dependencies. Do not treat the milestone as build-verified until the commands above pass.
+The frontend currently uses in-memory state only. Do not enter real sensitive health information in this development prototype. Encrypted IndexedDB is not implemented.
 
-## Exit criteria
+The original M1 foundation has been merged into main. Visual review remains outstanding. This follow-on branch adds CI and M2 data contracts; do not treat M1 as visually signed off until the desktop/mobile checks above are complete.
 
-Milestone 1 is complete when the production build succeeds, the responsive navigation and privacy controls pass the manual checks, and the unchanged Python test suite remains green.
