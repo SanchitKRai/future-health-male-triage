@@ -6,22 +6,16 @@ export type NavigationKey =
   | "care"
   | "privacy";
 
-export type HealthRecordCategory =
-  | "lab"
-  | "vital"
-  | "lifestyle"
-  | "screening";
+export type {
+  HealthRecord,
+  HealthRecordCategory,
+  LabResultRecord,
+  LabReferenceInterval,
+  LifestyleCheckIn,
+  OccupationalExposureRecord,
+  RecordMetadata,
+  RecordSource,
+  VitalMeasurement,
+  VitalRecord,
+} from "./health-records";
 
-export interface HealthRecord {
-  id: string;
-  category: HealthRecordCategory;
-  title: string;
-  value: string;
-  recordedAt: string;
-  unit?: string;
-}
-
-export interface UserPreferences {
-  analyticsConsent: boolean;
-  localStorageConsent: boolean;
-}
