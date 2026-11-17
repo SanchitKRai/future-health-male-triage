@@ -91,11 +91,16 @@ export default function RecordComposer({ onAdd, onCancel }: Props) {
       }
     } else if (kind === "vital") {
       const value = Number(vitalValue);
-      const measurement = vitalType === "weight" || vitalType === "height"
-        ? { type: vitalType, value, unit: vitalUnit } as const
-        : vitalType === "systolic-blood-pressure" || vitalType === "diastolic-blood-pressure"
-          ? { type: vitalType, value, unit: "mmHg" as const }
-          : { type: "resting-heart-rate" as const, value, unit: "bpm" as const };
+      let measurement: VitalRecord["measurement"];
+      if (vitalType === "weight") {
+        measurement = { type: "weight", value, unit: vitalUnit as "kg" | "lb" };
+      } else if (vitalType === "height") {
+        measurement = { type: "height", value, unit: vitalUnit as "cm" | "in" };
+      } else if (vitalType === "systolic-blood-pressure" || vitalType === "diastolic-blood-pressure") {
+        measurement = { type: vitalType, value, unit: "mmHg" };
+      } else {
+        measurement = { type: "resting-heart-rate", value, unit: "bpm" };
+      }
       const vitalRecord: VitalRecord = { ...metadata, recordedAt: dateAsTimestamp(vitalDate), category: "vital", measurement };
       record = vitalRecord; validation = validateVitalRecord(vitalRecord);
     } else if (kind === "lifestyle") {
