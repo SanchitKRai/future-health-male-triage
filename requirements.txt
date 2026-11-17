@@ -3,3 +3,6 @@ numpy
 pandas
 xgboost
 pytest
+fastapi>=0.162.5,<0.163
+pydantic>=2.14.3,<3
+uvicorn>=0.54.0,<1
