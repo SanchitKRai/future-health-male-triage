@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
-import { Activity, Beaker, BriefcaseBusiness, CalendarDays, Check, ChevronDown, ClipboardList, X } from "lucide-react";
+import { Activity, Beaker, BriefcaseBusiness, CalendarDays, Check, ClipboardList, X } from "lucide-react";
 import type {
   HealthRecord, LabResultRecord, LifestyleCheckIn, OccupationalExposureRecord, VitalRecord,
 } from "../types/health-records";
@@ -27,7 +27,6 @@ export default function RecordComposer({ onAdd, onCancel }: Props) {
   const today = useMemo(localDateValue, []);
   const [kind, setKind] = useState<RecordKind>("lab");
   const [errors, setErrors] = useState<string[]>([]);
-  const [notice, setNotice] = useState("");
 
   // Laboratory fields
   const [testName, setTestName] = useState("");
@@ -62,11 +61,11 @@ export default function RecordComposer({ onAdd, onCancel }: Props) {
   const [protectiveEquipment, setProtectiveEquipment] = useState<NonNullable<OccupationalExposureRecord["protectiveEquipmentUsed"]>>("unknown");
 
   function selectKind(next: RecordKind) {
-    setKind(next); setErrors([]); setNotice("");
+    setKind(next); setErrors([]);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setErrors([]); setNotice("");
+    event.preventDefault(); setErrors([]);
     const metadata = { id: crypto.randomUUID(), recordedAt: dateAsTimestamp(today), source: "manual" as const };
     let record: HealthRecord;
     let validation;
@@ -120,7 +119,6 @@ export default function RecordComposer({ onAdd, onCancel }: Props) {
 
     if (!validation.valid) { setErrors(validation.errors); return; }
     onAdd(record);
-    setNotice("Record added to this browser session. It has not been saved to disk or uploaded.");
     onCancel();
   }
 
@@ -192,7 +190,6 @@ export default function RecordComposer({ onAdd, onCancel }: Props) {
         )}
 
         {errors.length > 0 && <div className="record-errors" role="alert"><strong>Please check these fields:</strong><ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul></div>}
-        {notice && <div className="record-success" role="status"><Check size={15}/>{notice}</div>}
         <div className="record-form-actions"><button className="button button-secondary" type="button" onClick={onCancel}>Cancel</button><button className="button button-primary" type="submit">Add record <Check size={15}/></button></div>
       </form>
     </section>
