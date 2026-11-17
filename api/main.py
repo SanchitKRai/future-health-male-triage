@@ -56,6 +56,19 @@ async def prevent_sensitive_response_caching(request, call_next):
     return response
 
 
+@app.get("/")
+def root():
+    """Friendly landing response for someone opening the local API origin directly."""
+    return {
+        "service": "LOC Local Screening API",
+        "status": "ok",
+        "mode": "rules-only",
+        "health_check": "/api/health",
+        "screening_endpoint": "/api/screening/triage",
+        "message": "The API is running. Open the React app in the Vite browser tab to use LOC.",
+    }
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "loc-local-screening", "mode": "rules-only"}
