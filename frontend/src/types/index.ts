@@ -19,7 +19,3 @@ export type {
   VitalRecord,
 } from "./health-records";
 
-export interface UserPreferences {
-  analyticsConsent: boolean;
-  localStorageConsent: boolean;
-}
