@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, Clock3, Download,
+  ArrowLeft, ArrowRight, CircleAlert, Clock3, Download,
   LockKeyhole, ShieldAlert, ShieldCheck, Sparkles
 } from "lucide-react";
 import SectionHeading from "../components/ui/SectionHeading";
@@ -307,7 +307,7 @@ export default function Screening() {
           </div>
           <div className="screen-form-section">
             <label className="screen-field-label" htmlFor="screen-age">Your age</label>
-            <input id="screen-age" className="screen-input screen-age-input" type="number" min="1" max="120" inputMode="numeric" value={profile.age} onChange={(event) => setProfileField("age", event.target.value)} placeholder="Enter age in years" />
+            <input id="screen-age" className="screen-input screen-age-input" type="number" min="1" max="90" inputMode="numeric" value={profile.age} onChange={(event) => setProfileField("age", event.target.value)} placeholder="Enter age in years" />
             {profile.age !== "" && Number(profile.age) < 18 && <p className="screen-field-error">This prototype is available only to adults aged 18 or over.</p>}
           </div>
           <div className="screen-consent-list">
