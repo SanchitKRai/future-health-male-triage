@@ -144,7 +144,7 @@ function wrapperAad(vaultId: string, version: number, wrapper: KeyWrapEnvelope):
     ? [argon.memorySizeKiB, argon.iterations, argon.parallelism, argon.hashLength].join(":")
     : "none";
   return encodeText(
-    "LOC|vault-wrap|v" + version + "|" + vaultId + "|" + wrapper.kind + "|" + wrapper.kdf + "|" + params,
+    "LOC|vault-wrap|v" + version + "|" + vaultId + "|" + wrapper.kind + "|" + wrapper.kdf + "|" + wrapper.saltHex + "|" + params,
   );
 }
 
@@ -300,7 +300,7 @@ async function wrapDek(
     ciphertextHex: "",
     ...(argonParams ? { argon2id: { ...argonParams } } : {}),
   };
-  const encrypted = await encryptBytes(rawDek, key, wrapperAad(vaultId, FORMAT_VERSION, wrapper));
+  const encrypted = await encryptBytes(key, rawDek, wrapperAad(vaultId, FORMAT_VERSION, wrapper));
   return { ...wrapper, ...encrypted };
 }
 
