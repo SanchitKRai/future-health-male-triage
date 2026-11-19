@@ -226,7 +226,7 @@ Manual security review must include XSS threat review, CSP inspection, dependenc
 
 ## 11. Implementation sequence after design approval
 
-1. **M4.1 — Crypto spike:** prove the KDF, AES-GCM, key wrapping, AAD, IV generation and browser compatibility using non-health dummy payloads only.
+1. **M4.1 — Crypto spike and performance review:** prove the KDF, AES-GCM, key wrapping, AAD and IV handling using non-health dummy payloads only; benchmark on supported devices and complete an independent review.
 2. **M4.2 — Vault metadata and IndexedDB adapter:** schema/versioning and transactions, with no UI persistence toggle yet.
 3. **M4.3 — Consent and lock/unlock UX:** guest mode remains first; opt-in creation, optional recovery phrase, unlock, manual lock and inactivity lock.
 4. **M4.4 — Encrypted repository integration:** move validated record objects between Zustand memory and the encrypted repository only after unlock.
