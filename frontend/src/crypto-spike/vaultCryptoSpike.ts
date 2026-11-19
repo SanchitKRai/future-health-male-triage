@@ -206,6 +206,60 @@ async function derivePassphraseKey(
   }
 }
 
+
+export interface Argon2idBenchmarkReport {
+  parameters: Argon2idParams;
+  warmupMs: number;
+  samplesMs: number[];
+  minMs: number;
+  medianMs: number;
+  maxMs: number;
+}
+
+export async function runArgon2idBenchmark(
+  repetitions = 5,
+  onProgress?: (completed: number, total: number) => void,
+): Promise<Argon2idBenchmarkReport> {
+  if (!Number.isInteger(repetitions) || repetitions < 3 || repetitions > 10) {
+    throw new CryptoSpikeError("Choose between 3 and 10 benchmark repetitions.");
+  }
+  if (typeof performance === "undefined" || typeof performance.now !== "function") {
+    throw new CryptoSpikeError("A high-resolution performance timer is unavailable.");
+  }
+
+  const runOnce = async (): Promise<number> => {
+    const salt = randomBytes(ARGON2_SALT_BYTES);
+    const startedAt = performance.now();
+    const key = await derivePassphraseKey(BENCHMARK_PASSPHRASE, salt);
+    const elapsed = performance.now() - startedAt;
+    // CryptoKey is non-extractable; the reference is intentionally not retained.
+    void key;
+    salt.fill(0);
+    return elapsed;
+  };
+
+  const warmupMs = await runOnce();
+  const samplesMs: number[] = [];
+  for (let index = 0; index < repetitions; index += 1) {
+    samplesMs.push(await runOnce());
+    onProgress?.(index + 1, repetitions);
+  }
+  const sorted = [...samplesMs].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  const medianMs = sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
+
+  return {
+    parameters: { ...SPIKE_ARGON2ID_PARAMS },
+    warmupMs,
+    samplesMs: samplesMs.map((sample) => Math.round(sample * 10) / 10),
+    minMs: Math.round(sorted[0] * 10) / 10,
+    medianMs: Math.round(medianMs * 10) / 10,
+    maxMs: Math.round(sorted[sorted.length - 1] * 10) / 10,
+  };
+}
+
 export function generateRecoveryPhrase(): string {
   const entropy = randomBytes(32);
   try {
