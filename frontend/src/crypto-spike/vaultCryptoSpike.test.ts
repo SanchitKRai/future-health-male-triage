@@ -136,6 +136,14 @@ describe("LOC M4.1 crypto spike — dummy data only", () => {
       secret: passphrase,
     })).rejects.toBeInstanceOf(CryptoSpikeError);
 
+
+    const nestedKdfField = cloneEnvelope();
+    (nestedKdfField.keyWraps.passphrase.argon2id as Record<string, unknown>).unexpected = "unsupported";
+    await expect(unlockDummyVault(nestedKdfField, {
+      kind: "passphrase",
+      secret: passphrase,
+    })).rejects.toBeInstanceOf(CryptoSpikeError);
+
     const formatTamper = cloneEnvelope();
     formatTamper.formatVersion = 2;
     await expect(unlockDummyVault(formatTamper, {
@@ -208,6 +216,9 @@ describe("LOC M4.1 crypto spike — dummy data only", () => {
       kind: "passphrase",
       secret: "x".repeat(2_000),
     })).rejects.toBeInstanceOf(CryptoSpikeError);
+
+    await expect(unlockDummyVault(cloneEnvelope(), undefined as unknown as { kind: "passphrase"; secret: string })).rejects.toBeInstanceOf(CryptoSpikeError);
+
   });
 
   it("rejects copying an encrypted record from a different vault", async () => {
