@@ -1,6 +1,6 @@
 # LOC V2 — M4.1 cryptography spike
 
-**Status:** Experimental proof of concept using synthetic dummy data only. Not connected to the application and not approved for production.
+**Status:** Experimental proof of concept using synthetic dummy data only. Not connected to the application and not approved for production. Initial desktop and nine mobile benchmark sessions are collected; independent cryptographic review remains pending. M4.2 remains blocked.
 
 ## Scope
 
@@ -82,10 +82,10 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 
 ## Known limitations / open review items
 
-- Argon2id parameters have not been benchmarked on real low-end mobile hardware. A local runner is available at `frontend/crypto-benchmark.html`; actual device reports are still pending.
+- Initial mobile profile reports are available in the archived [temporary benchmark repository](https://github.com/SanchitKRai/loc-m4-1-mobile-benchmark/tree/main/docs/benchmarks/live_mobile). They include broad Android Chrome, iPhone/iPad Safari and other-mobile-browser labels, but not exact model/OS/browser build details. These measurements cover derivation plus non-extractable AES key import only; they are not full vault-unlock or storage timings.
 - The repository does not yet contain `frontend/package-lock.json`, and CI uses `npm install`; dependency resolution is not reproducible enough for a production crypto feature.
 - BIP-39 is a standard mnemonic encoding; LOC uses it as an offline secret representation, not as a cryptocurrency wallet. The recovery UX and threat of photographing/copying the phrase require user testing.
-- The exact production key-wrapping envelope, algorithm/version migration, and backup format still need independent cryptographic review.
+- The exact production key-wrapping envelope, algorithm/version migration, and backup format still need independent cryptographic review. A dedicated reviewer brief is available at [LOC_V2_M4_1_INDEPENDENT_CRYPTO_REVIEW_BRIEF.md](LOC_V2_M4_1_INDEPENDENT_CRYPTO_REVIEW_BRIEF.md), tracked in [issue #13](https://github.com/SanchitKRai/future-health-male-triage/issues/13).
 - A recovery phrase only unlocks an existing vault or encrypted backup; it cannot restore a deleted browser profile or lost device without a backup.
 - Old exported backups may retain old wrapper envelopes after credential rotation. Rotation cannot revoke copies already exported.
 - WebCrypto's non-extractable key does not protect against malicious same-origin code that can invoke operations while the vault is unlocked.
@@ -109,9 +109,10 @@ Follow-up CI run: https://github.com/SanchitKRai/future-health-male-triage/actio
 - [x] Existing Python regression suite passes unchanged (127 tests).
 - [x] Local on-device benchmark runner is implemented.
 - [x] Add a local-only Argon2id benchmark runner that uses dummy data and never sends results.
-- [ ] Collect benchmark reports on supported desktop, lower-end Android and mobile Safari devices.
+- [x] Collect initial desktop reference and nine mobile-profile benchmark sessions; validate all mobile JSON summary values against raw samples.
+- [ ] Approve formal device/browser support matrix, including exact versions and acceptable unlock latency.
 - [ ] Review recovery phrase word encoding, confirmation UX and offline storage guidance.
-- [ ] Independent review of key hierarchy, AAD, IV handling, rotation and backup threat model.
+- [ ] Independent review of key hierarchy, AAD, IV handling, rotation and backup threat model (reviewer handoff brief prepared; no independent review completed).
 - [ ] Approve production KDF parameters and library versions.
 - [x] Confirm no application route or health-record flow imports this spike module.
 - [ ] Add and review a committed npm lockfile; switch CI to `npm ci` before M4.2.
