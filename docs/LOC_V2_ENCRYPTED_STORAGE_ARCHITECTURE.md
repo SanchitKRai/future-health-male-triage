@@ -57,10 +57,10 @@ One vault metadata record containing only the information required to unlock and
 
 - vault format/version;
 - random vault ID;
-- KDF identifier and parameters;
-- random KDF salt;
-- key-wrap IV;
-- passphrase-wrapped DEK envelope (wrap type, IV and ciphertext);\n- optional recovery-wrapped DEK envelope (wrap type, recovery KDF/derivation salt, IV and ciphertext);
+- passphrase KDF identifier and parameters;
+- random passphrase KDF salt;
+- passphrase-wrapped DEK envelope (wrap type, IV and ciphertext);
+- optional recovery-wrapped DEK envelope (HKDF salt, wrap type, IV and ciphertext);
 - creation / last-updated timestamps that do not reveal health details.
 
 ### `encryptedRecords`
@@ -99,12 +99,16 @@ Preferred candidate:
 
 1. Generate a random 256-bit DEK when the vault is created.
 2. Derive a key-encryption key (KEK) from the user's high-entropy vault passphrase and a random salt using a reviewed password-based KDF.
-3. Use the KEK only to wrap/unwrap the DEK. Store the wrapped DEK, salt and KDF parameters; never store the passphrase or plaintext KEK.
-4. Use the DEK to encrypt each record independently with AES-GCM and a new IV.
-5. After unlock, keep the usable DEK as a non-extractable CryptoKey where supported. Drop the key reference and clear decrypted records from application state when locking.
-6. Change the passphrase by deriving a new KEK and re-wrapping the DEK; do not require rewriting every record.\n7. If the user opts into offline recovery, generate an independent 256-bit recovery secret with the browser cryptographic random generator. Encode it as a human-transcribable recovery phrase using a vetted, standard encoding implementation (encoding choice is an explicit crypto-spike decision; do not invent a custom word list).\n8. Derive a separate recovery KEK from the recovery secret using HKDF-SHA-256 with a fresh random salt and domain-separated context such as `LOC vault recovery KEK v1`. HKDF is appropriate here because the recovery secret is already high-entropy random material; do not use HKDF to stretch a human-chosen password.\n9. Wrap the same DEK independently under the passphrase KEK and recovery KEK, using separate fresh AES-GCM IVs and AAD that binds the vault ID, format version and wrap type. Store both authenticated wrappers, but never store the recovery phrase or the unwrapped recovery KEK.\n10. The recovery phrase is shown once at creation. Offer a user-initiated print/download or copy action with a clear warning that anyone who obtains the phrase can unlock the vault. Ask the user to confirm they have stored it offline (for example, by re-entering selected words) before marking recovery as configured.
+3. Use the passphrase KEK only to wrap/unwrap the DEK. Store the wrapped DEK, salt and KDF parameters; never store the passphrase or plaintext KEK.
+4. Use the DEK to encrypt each record independently with AES-GCM and a fresh IV.
+5. After unlock, keep the usable DEK as a non-extractable CryptoKey where supported. Clear decrypted Zustand state and discard key references when locking.
+6. Change the passphrase by deriving a new KEK and re-wrapping the DEK; do not require rewriting every record.
+7. If the user opts into offline recovery, generate an independent 256-bit recovery secret from the browser's cryptographically secure random generator. Encode it as a human-transcribable recovery phrase using a vetted, standard implementation; the exact encoding is a crypto-spike decision. Do not create a custom word list or accept user-invented words.
+8. Derive a separate recovery KEK from the high-entropy recovery secret with HKDF-SHA-256, a fresh random salt and a domain-separated context (for example, `LOC vault recovery KEK v1`). HKDF is suitable here because the recovery secret is already random and high entropy; do not use HKDF to stretch a human-chosen password.
+9. Wrap the same DEK independently under the passphrase KEK and recovery KEK. Use separate fresh AES-GCM IVs and AAD binding the vault ID, format version and wrap type. Store both authenticated wrappers, but never store the recovery phrase or unwrapped recovery KEK.
+10. Show the recovery phrase once. Allow a deliberate user-initiated copy/print/download action, warn that anyone holding it can unlock the vault, and require an offline-save acknowledgement plus a verification challenge before marking recovery as configured.
 
-The wrapping algorithm and exact Web Crypto key import/export sequence must be proven in a small crypto spike and reviewed before implementation. Do not improvise a custom envelope or key format.
+Both wrappers must be authenticated independently. The recovery wrapper is optional; a passphrase-only vault remains a supported choice. Prove the exact Web Crypto key-import/wrapping flow in the crypto spike and review it before use.
 
 ### KDF choice — explicit open decision
 
@@ -120,10 +124,12 @@ Reference: [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.o
 ### First-time opt-in
 
 - Persistent storage starts OFF.
-- Explain exactly what will be saved, where it is stored, what encryption does/does not protect, and what happens if the passphrase is lost.
-- Require a deliberate opt-in and a strong vault passphrase confirmation.
-- Create the vault and verify that a test envelope encrypts/decrypts successfully before saving user records.
-- Ask separately whether to move records currently in memory into the new vault. Never migrate automatically.
+- Explain what is saved, where it is stored, what encryption does and does not protect, and what happens if credentials and backups are lost.
+- Require deliberate consent and a strong vault passphrase confirmation.
+- Ask whether the user also wants an optional offline recovery phrase. It is not mandatory; allow “Not now” and explain that losing the passphrase without a recovery phrase or usable backup means permanent loss.
+- If selected, generate 256 bits of recovery entropy on-device, show the phrase once, require an offline-save acknowledgement and a verification challenge, and only then persist the recovery-wrapped DEK envelope. Never automatically store or transmit the phrase.
+- Verify each enabled unlock path using non-health test data before saving any user records.
+- Ask separately whether to move records currently held in memory into the new vault. Never migrate automatically.
 
 ### Unlock
 
@@ -142,12 +148,26 @@ Proposed initial defaults for usability testing (not yet final):
 - On lock, clear decrypted Zustand records, close open composer state, revoke download object URLs, clear sensitive form state and discard key references.
 - Do not claim memory bytes are securely zeroized; JavaScript runtimes do not provide a reliable guarantee of immediate memory erasure.
 
-## 6. Passphrase loss, backup and recovery
+## 6. Passphrase loss, offline recovery and backup
 
-- There is no server recovery key and no password-reset email because LOC has no account/server key escrow in this design.
-- If the user forgets the passphrase and has no usable backup, encrypted records are unrecoverable. This must be stated before vault creation.
-- Provide a user-initiated encrypted backup export that contains ciphertext and the metadata needed to restore the vault; it must not contain the passphrase or an unwrapped DEK.
-- Restoring a backup requires the passphrase and must validate the authenticated envelope before importing records.
+### Optional offline recovery phrase
+
+- Offer the recovery phrase as an optional second unlock method during vault creation and later in vault settings. Enabling it later requires the vault to be unlocked and the current passphrase to be re-authenticated.
+- There is no server recovery key, account reset or email recovery. LOC never receives or stores the recovery phrase.
+- The phrase represents a random, high-entropy secret generated on-device. It is not user-invented and must not be based on memorable words or personal information.
+- Store only the recovery-wrapped DEK envelope in IndexedDB. The phrase itself is displayed once and must be stored separately from the device holding the vault.
+- Do not encourage screenshots, email, chat messages, cloud notes or storing the phrase beside the encrypted vault. A printed or handwritten copy kept in a secure separate place is the intended use case.
+- If the user forgets the passphrase, the offline phrase can unlock the existing encrypted vault. Require them to set a new passphrase and generate a replacement recovery phrase if they still want recovery enabled.
+- After the new wrappers have been verified and committed transactionally, remove the old wrappers from the active vault. If the recovery phrase is suspected compromised, require re-authentication and rotate it.
+- Rotating wrappers in the active vault does not revoke older exported backups containing old wrappers. Tell users to refresh or securely dispose of old backup copies.
+- If the user loses both the passphrase and recovery phrase and has no usable backup with another valid unlock method, the encrypted records are unrecoverable. Explain this before vault creation.
+
+### Recovery is not backup
+
+- The offline phrase restores access to an existing encrypted vault or a copy of its encrypted backup. It does not recreate records if IndexedDB is cleared, the browser profile is deleted, the device is lost, or the encrypted vault is corrupted.
+- Provide a separate user-initiated encrypted backup export containing ciphertext, vault metadata and all available wrapped-DEK envelopes. It must not contain the passphrase, recovery phrase or unwrapped DEK.
+- Restoring an encrypted backup requires either the passphrase or the optional recovery phrase and must authenticate and validate all envelopes before importing records.
+- Refresh encrypted backups after credential rotation; previous backup copies may retain older wrapped-key envelopes.
 - A separate plaintext JSON export may remain available only after an explicit warning that the downloaded file is unencrypted and can be read by anyone with access to it.
 
 ## 7. Delete and clear semantics
@@ -183,7 +203,12 @@ OWASP warns that IndexedDB content can be read or modified by same-origin script
 
 Before turning persistence ON, add automated tests for:
 
-- Passphrase-to-key derivation and unlock with correct/wrong passphrase.\n- Recovery-phrase entropy generation, encoding/decoding and checksum/error detection.\n- Recovery unlock with correct phrase and fail-closed behaviour for mistyped/incorrect phrase.\n- Passphrase recovery rotates the active passphrase wrapper and recovery wrapper without re-encrypting record ciphertext.\n- Recovery phrase is never present in IndexedDB, logs, network requests, crash reports or automatic downloads.\n- User can opt out of recovery and still create/use a passphrase-only vault.
+- Passphrase-to-key derivation and unlock with correct/wrong passphrase.
+- Recovery-phrase entropy generation, encoding/decoding and error detection.
+- Recovery unlock with correct phrase and fail-closed behaviour for a mistyped or incorrect phrase.
+- Passphrase recovery rotates the active passphrase wrapper and recovery wrapper without re-encrypting record ciphertext.
+- Recovery phrase never appears in IndexedDB, logs, network requests, crash reports or automatic downloads.
+- User can opt out of recovery and still create/use a passphrase-only vault.
 - Encryption/decryption round trip for every health-record union type.
 - Tampered ciphertext, IV, record ID, AAD, salt, wrapped DEK and format version fail closed.
 - Each encryption operation uses a fresh random IV.
@@ -197,16 +222,17 @@ Before turning persistence ON, add automated tests for:
 - Migrations preserve data on successful upgrade and roll back on failure.
 - Supported-browser and low-memory/mobile-device benchmarks.
 
-Manual security review must include XSS threat review, CSP inspection, dependency review, browser profile access caveats and an independent review of the cryptographic envelope.
+Manual security review must include XSS threat review, CSP inspection, dependency review, browser-profile access caveats and an independent review of the cryptographic envelope.
 
 ## 11. Implementation sequence after design approval
 
 1. **M4.1 — Crypto spike:** prove the KDF, AES-GCM, key wrapping, AAD, IV generation and browser compatibility using non-health dummy payloads only.
 2. **M4.2 — Vault metadata and IndexedDB adapter:** schema/versioning and transactions, with no UI persistence toggle yet.
-3. **M4.3 — Consent and lock/unlock UX:** guest mode remains first; opt-in creation, unlock, manual lock and inactivity lock.
+3. **M4.3 — Consent and lock/unlock UX:** guest mode remains first; opt-in creation, optional recovery phrase, unlock, manual lock and inactivity lock.
 4. **M4.4 — Encrypted repository integration:** move validated record objects between Zustand memory and the encrypted repository only after unlock.
-5. **M4.5 — Offline recovery:** generate/verify optional recovery phrase, unlock with it, require new passphrase, rotate wrappers and test old credential invalidation.\n6. **M4.6 — Backup, restore, passphrase change and delete:** encrypted backup/restore, credential rotation and deletion semantics.\n7. **M4.7 — Security and mobile QA:** XSS/CSP, dependency audit, browser tests, storage inspection and usability review.
-6. **M4.6 — Security and mobile QA:** XSS/CSP, dependency audit, browser tests, storage inspection and usability review.
+5. **M4.5 — Offline recovery:** generate/verify optional recovery phrase, unlock with it, require a new passphrase, rotate wrappers and test old-credential invalidation.
+6. **M4.6 — Backup, restore, passphrase change and delete:** encrypted backup/restore, credential rotation and deletion semantics.
+7. **M4.7 — Security and mobile QA:** XSS/CSP, dependency audit, browser tests, storage inspection and usability review.
 
 **Release gate:** persistent storage remains disabled until all automated tests, manual checks and independent design review are complete.
 
@@ -214,7 +240,6 @@ Manual security review must include XSS threat review, CSP inspection, dependenc
 
 - Is LOC strictly single-device, or should encrypted backup/restore be a first-class supported workflow?
 - Should auto-lock be 5 minutes, configurable, or both?
-- **Recovery-key product decision (recommended):** offer an optional offline recovery phrase generated during vault creation. Confirm the encoding format and user verification flow in the crypto spike.
 - Which browsers/devices are in the supported matrix, especially mobile Safari and Android browsers?
 - Is any formal compliance target (for example FIPS) required? Do not imply one without an explicit requirement and validated implementation.
 
