@@ -15,7 +15,9 @@
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.3",
     "recharts": "^3.10.1",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "@scure/bip39": "2.4.0",
+    "hash-wasm": "4.13.0"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
