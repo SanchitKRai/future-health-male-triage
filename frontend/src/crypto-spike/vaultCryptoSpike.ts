@@ -1,0 +1,505 @@
+/**
+ * LOC M4.1 CRYPTO SPIKE — DUMMY DATA ONLY.
+ *
+ * This module is intentionally not connected to the application, Zustand,
+ * IndexedDB, localStorage, the screening API or any health-record type.
+ * It proves candidate primitives and envelope behaviours only.
+ * Do not import it into production screens or treat current KDF parameters as approved.
+ */
+import { entropyToMnemonic, mnemonicToEntropy, validateMnemonic } from "@scure/bip39";
+import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { argon2id } from "hash-wasm";
+
+const FORMAT_VERSION = 1 as const;
+const DEK_BYTES = 32;
+const IV_BYTES = 12;
+const SALT_BYTES = 16;
+const ARGON2_SALT_BYTES = 16;
+const RECOVERY_DOMAIN = "LOC vault recovery KEK v1";
+const DUMMY_RECORD_ID = "loc-crypto-spike-dummy-record";
+export const DUMMY_PLAINTEXT = "LOC crypto spike: synthetic test payload only; not health information.";
+
+export const SPIKE_ARGON2ID_PARAMS = Object.freeze({
+  memorySizeKiB: 19_456,
+  iterations: 2,
+  parallelism: 1,
+  hashLength: 32,
+});
+
+type WrapperKind = "passphrase" | "recovery";
+type KdfKind = "argon2id-v1.3" | "hkdf-sha256";
+
+export interface KeyWrapEnvelope {
+  kind: WrapperKind;
+  kdf: KdfKind;
+  saltHex: string;
+  ivHex: string;
+  ciphertextHex: string;
+  argon2id?: {
+    memorySizeKiB: number;
+    iterations: number;
+    parallelism: number;
+    hashLength: number;
+  };
+}
+
+export interface DummyRecordEnvelope {
+  recordId: string;
+  formatVersion: number;
+  ivHex: string;
+  ciphertextHex: string;
+}
+
+export interface CryptoSpikeVaultEnvelope {
+  formatVersion: number;
+  vaultId: string;
+  keyWraps: {
+    passphrase: KeyWrapEnvelope;
+    recovery?: KeyWrapEnvelope;
+  };
+  dummyRecord: DummyRecordEnvelope;
+}
+
+export type UnlockCredential =
+  | { kind: "passphrase"; secret: string }
+  | { kind: "recovery"; secret: string };
+
+export interface CreatedCryptoSpikeVault {
+  envelope: CryptoSpikeVaultEnvelope;
+  /** Show-once test output. Never store this value in an envelope or database. */
+  recoveryPhrase?: string;
+}
+
+export interface RotatedCryptoSpikeVault {
+  envelope: CryptoSpikeVaultEnvelope;
+  /** A newly generated phrase. The previous phrase is invalid for the new envelope. */
+  recoveryPhrase?: string;
+}
+
+export class CryptoSpikeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CryptoSpikeError";
+  }
+}
+
+function subtle(): SubtleCrypto {
+  const api = globalThis.crypto?.subtle;
+  if (!api) throw new CryptoSpikeError("Web Crypto is unavailable in this runtime.");
+  return api;
+}
+
+function randomBytes(length: number): Uint8Array {
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new CryptoSpikeError("A cryptographically secure random generator is unavailable.");
+  }
+  return globalThis.crypto.getRandomValues(new Uint8Array(length));
+}
+
+function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function fromHex(value: string): Uint8Array {
+  if (!/^(?:[0-9a-f]{2})*$/i.test(value)) {
+    throw new CryptoSpikeError("The crypto envelope contains malformed hexadecimal data.");
+  }
+  const bytes = new Uint8Array(value.length / 2);
+  for (let index = 0; index < value.length; index += 2) {
+    bytes[index / 2] = Number.parseInt(value.slice(index, index + 2), 16);
+  }
+  return bytes;
+}
+
+function encodeText(value: string): Uint8Array {
+  return new TextEncoder().encode(value);
+}
+
+function decodeText(value: ArrayBuffer): string {
+  return new TextDecoder("utf-8", { fatal: true }).decode(value);
+}
+
+function createVaultId(): string {
+  return toHex(randomBytes(16));
+}
+
+function assertPassphrase(passphrase: string): string {
+  const normalized = passphrase.normalize("NFKC");
+  if (normalized.length < 12) {
+    throw new CryptoSpikeError("For this spike, use a passphrase of at least 12 characters.");
+  }
+  if (normalized.length > 1024) {
+    throw new CryptoSpikeError("The passphrase is too long.");
+  }
+  return normalized;
+}
+
+function wrapperAad(vaultId: string, version: number, wrapper: KeyWrapEnvelope): Uint8Array {
+  const argon = wrapper.argon2id;
+  const params = argon
+    ? [argon.memorySizeKiB, argon.iterations, argon.parallelism, argon.hashLength].join(":")
+    : "none";
+  return encodeText(
+    "LOC|vault-wrap|v" + version + "|" + vaultId + "|" + wrapper.kind + "|" + wrapper.kdf + "|" + params,
+  );
+}
+
+function recordAad(recordId: string, version: number): Uint8Array {
+  return encodeText("LOC|record|v" + version + "|" + recordId);
+}
+
+async function importAesKey(raw: Uint8Array, extractable: boolean): Promise<CryptoKey> {
+  return subtle().importKey(
+    "raw",
+    asArrayBuffer(raw),
+    { name: "AES-GCM" },
+    extractable,
+    ["encrypt", "decrypt"],
+  );
+}
+
+async function derivePassphraseKey(
+  passphrase: string,
+  salt: Uint8Array,
+  params = SPIKE_ARGON2ID_PARAMS,
+): Promise<CryptoKey> {
+  const normalized = assertPassphrase(passphrase);
+  const output = await argon2id({
+    password: normalized,
+    salt,
+    parallelism: params.parallelism,
+    iterations: params.iterations,
+    memorySize: params.memorySizeKiB,
+    hashLength: params.hashLength,
+    outputType: "binary",
+  });
+
+  if (!(output instanceof Uint8Array) || output.byteLength !== 32) {
+    throw new CryptoSpikeError("Argon2id did not return the expected 256-bit key material.");
+  }
+  try {
+    return await importAesKey(output, false);
+  } finally {
+    output.fill(0);
+  }
+}
+
+export function generateRecoveryPhrase(): string {
+  const entropy = randomBytes(32);
+  try {
+    return entropyToMnemonic(entropy, wordlist);
+  } finally {
+    entropy.fill(0);
+  }
+}
+
+export function validateRecoveryPhrase(phrase: string): boolean {
+  const normalized = phrase.normalize("NFKD").trim().split(/\s+/).join(" ");
+  return validateMnemonic(normalized, wordlist);
+}
+
+function decodeRecoveryPhrase(phrase: string): Uint8Array {
+  const normalized = phrase.normalize("NFKD").trim().split(/\s+/).join(" ");
+  if (!validateMnemonic(normalized, wordlist)) {
+    throw new CryptoSpikeError("The recovery phrase is invalid or has a checksum error.");
+  }
+  const entropy = mnemonicToEntropy(normalized, wordlist);
+  if (entropy.byteLength !== 32) {
+    entropy.fill(0);
+    throw new CryptoSpikeError("The recovery phrase does not represent 256 bits of entropy.");
+  }
+  return entropy;
+}
+
+async function deriveRecoveryKey(entropy: Uint8Array, salt: Uint8Array): Promise<CryptoKey> {
+  if (entropy.byteLength !== 32) {
+    throw new CryptoSpikeError("Recovery entropy must be exactly 256 bits.");
+  }
+  const keyMaterial = await subtle().importKey(
+    "raw",
+    asArrayBuffer(entropy),
+    "HKDF",
+    false,
+    ["deriveKey"],
+  );
+  return subtle().deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: asArrayBuffer(salt),
+      info: asArrayBuffer(encodeText(RECOVERY_DOMAIN)),
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+async function encryptBytes(
+  key: CryptoKey,
+  plaintext: Uint8Array,
+  aad: Uint8Array,
+): Promise<{ ivHex: string; ciphertextHex: string }> {
+  const iv = randomBytes(IV_BYTES);
+  const ciphertext = await subtle().encrypt(
+    {
+      name: "AES-GCM",
+      iv: asArrayBuffer(iv),
+      additionalData: asArrayBuffer(aad),
+      tagLength: 128,
+    },
+    key,
+    asArrayBuffer(plaintext),
+  );
+  return { ivHex: toHex(iv), ciphertextHex: toHex(new Uint8Array(ciphertext)) };
+}
+
+async function decryptBytes(
+  key: CryptoKey,
+  ivHex: string,
+  ciphertextHex: string,
+  aad: Uint8Array,
+): Promise<ArrayBuffer> {
+  const iv = fromHex(ivHex);
+  const ciphertext = fromHex(ciphertextHex);
+  if (iv.byteLength !== IV_BYTES) throw new CryptoSpikeError("The AES-GCM IV must be 12 bytes.");
+  try {
+    return await subtle().decrypt(
+      {
+        name: "AES-GCM",
+        iv: asArrayBuffer(iv),
+        additionalData: asArrayBuffer(aad),
+        tagLength: 128,
+      },
+      key,
+      asArrayBuffer(ciphertext),
+    );
+  } catch {
+    throw new CryptoSpikeError("Authentication failed. The credential or encrypted data is invalid.");
+  }
+}
+
+async function wrapDek(
+  rawDek: Uint8Array,
+  vaultId: string,
+  kind: WrapperKind,
+  key: CryptoKey,
+  salt: Uint8Array,
+  argonParams?: typeof SPIKE_ARGON2ID_PARAMS,
+): Promise<KeyWrapEnvelope> {
+  const wrapper: KeyWrapEnvelope = {
+    kind,
+    kdf: kind === "passphrase" ? "argon2id-v1.3" : "hkdf-sha256",
+    saltHex: toHex(salt),
+    ivHex: "",
+    ciphertextHex: "",
+    ...(argonParams ? { argon2id: { ...argonParams } } : {}),
+  };
+  const encrypted = await encryptBytes(rawDek, key, wrapperAad(vaultId, FORMAT_VERSION, wrapper));
+  return { ...wrapper, ...encrypted };
+}
+
+async function unwrapDek(
+  wrapper: KeyWrapEnvelope,
+  vaultId: string,
+  formatVersion: number,
+  credential: UnlockCredential,
+): Promise<Uint8Array> {
+  if (wrapper.kind !== credential.kind) {
+    throw new CryptoSpikeError("The selected credential does not match this key wrapper.");
+  }
+
+  const salt = fromHex(wrapper.saltHex);
+  if (salt.byteLength !== SALT_BYTES) throw new CryptoSpikeError("The key-wrapper salt is malformed.");
+
+  let wrappingKey: CryptoKey;
+  if (credential.kind === "passphrase") {
+    if (wrapper.kdf !== "argon2id-v1.3" || !wrapper.argon2id) {
+      throw new CryptoSpikeError("Unsupported passphrase KDF metadata.");
+    }
+    wrappingKey = await derivePassphraseKey(credential.secret, salt, wrapper.argon2id);
+  } else {
+    if (wrapper.kdf !== "hkdf-sha256") {
+      throw new CryptoSpikeError("Unsupported recovery KDF metadata.");
+    }
+    const entropy = decodeRecoveryPhrase(credential.secret);
+    try {
+      wrappingKey = await deriveRecoveryKey(entropy, salt);
+    } finally {
+      entropy.fill(0);
+    }
+  }
+
+  const plaintext = await decryptBytes(
+    wrappingKey,
+    wrapper.ivHex,
+    wrapper.ciphertextHex,
+    wrapperAad(vaultId, formatVersion, wrapper),
+  );
+  const rawDek = new Uint8Array(plaintext);
+  if (rawDek.byteLength !== DEK_BYTES) {
+    rawDek.fill(0);
+    throw new CryptoSpikeError("The unwrapped data key has an unexpected length.");
+  }
+  return rawDek;
+}
+
+async function createPassphraseWrapper(
+  rawDek: Uint8Array,
+  vaultId: string,
+  passphrase: string,
+): Promise<KeyWrapEnvelope> {
+  const salt = randomBytes(ARGON2_SALT_BYTES);
+  const key = await derivePassphraseKey(passphrase, salt);
+  return wrapDek(rawDek, vaultId, "passphrase", key, salt, SPIKE_ARGON2ID_PARAMS);
+}
+
+async function createRecoveryWrapper(
+  rawDek: Uint8Array,
+  vaultId: string,
+  recoveryPhrase: string,
+): Promise<KeyWrapEnvelope> {
+  const salt = randomBytes(SALT_BYTES);
+  const entropy = decodeRecoveryPhrase(recoveryPhrase);
+  try {
+    const key = await deriveRecoveryKey(entropy, salt);
+    return wrapDek(rawDek, vaultId, "recovery", key, salt);
+  } finally {
+    entropy.fill(0);
+  }
+}
+
+async function createUnlockedDek(rawDek: Uint8Array): Promise<CryptoKey> {
+  return importAesKey(rawDek, false);
+}
+
+async function encryptDummyRecord(rawDek: Uint8Array): Promise<DummyRecordEnvelope> {
+  const key = await createUnlockedDek(rawDek);
+  const encrypted = await encryptBytes(
+    key,
+    encodeText(DUMMY_PLAINTEXT),
+    recordAad(DUMMY_RECORD_ID, FORMAT_VERSION),
+  );
+  return {
+    recordId: DUMMY_RECORD_ID,
+    formatVersion: FORMAT_VERSION,
+    ...encrypted,
+  };
+}
+
+async function decryptDummyRecord(
+  rawDek: Uint8Array,
+  record: DummyRecordEnvelope,
+): Promise<string> {
+  const key = await createUnlockedDek(rawDek);
+  const plaintext = await decryptBytes(
+    key,
+    record.ivHex,
+    record.ciphertextHex,
+    recordAad(record.recordId, record.formatVersion),
+  );
+  return decodeText(plaintext);
+}
+
+export async function createDummyVault(
+  passphrase: string,
+  includeRecovery = true,
+): Promise<CreatedCryptoSpikeVault> {
+  assertPassphrase(passphrase);
+  const vaultId = createVaultId();
+  const rawDek = randomBytes(DEK_BYTES);
+  let recoveryPhrase: string | undefined;
+
+  try {
+    const passphraseWrap = await createPassphraseWrapper(rawDek, vaultId, passphrase);
+    let recoveryWrap: KeyWrapEnvelope | undefined;
+    if (includeRecovery) {
+      recoveryPhrase = generateRecoveryPhrase();
+      recoveryWrap = await createRecoveryWrapper(rawDek, vaultId, recoveryPhrase);
+    }
+    const dummyRecord = await encryptDummyRecord(rawDek);
+    return {
+      envelope: {
+        formatVersion: FORMAT_VERSION,
+        vaultId,
+        keyWraps: {
+          passphrase: passphraseWrap,
+          ...(recoveryWrap ? { recovery: recoveryWrap } : {}),
+        },
+        dummyRecord,
+      },
+      ...(recoveryPhrase ? { recoveryPhrase } : {}),
+    };
+  } finally {
+    rawDek.fill(0);
+  }
+}
+
+export async function unlockDummyVault(
+  envelope: CryptoSpikeVaultEnvelope,
+  credential: UnlockCredential,
+): Promise<string> {
+  if (envelope.formatVersion !== FORMAT_VERSION) {
+    throw new CryptoSpikeError("Unsupported vault format version.");
+  }
+  const wrapper = credential.kind === "passphrase"
+    ? envelope.keyWraps.passphrase
+    : envelope.keyWraps.recovery;
+  if (!wrapper) throw new CryptoSpikeError("This vault has no offline recovery wrapper.");
+
+  const rawDek = await unwrapDek(wrapper, envelope.vaultId, envelope.formatVersion, credential);
+  try {
+    return await decryptDummyRecord(rawDek, envelope.dummyRecord);
+  } finally {
+    rawDek.fill(0);
+  }
+}
+
+export async function rotateDummyVaultCredentials(
+  envelope: CryptoSpikeVaultEnvelope,
+  currentCredential: UnlockCredential,
+  newPassphrase: string,
+  includeRecovery = true,
+): Promise<RotatedCryptoSpikeVault> {
+  assertPassphrase(newPassphrase);
+  const currentWrapper = currentCredential.kind === "passphrase"
+    ? envelope.keyWraps.passphrase
+    : envelope.keyWraps.recovery;
+  if (!currentWrapper) throw new CryptoSpikeError("No matching unlock wrapper is available.");
+
+  const rawDek = await unwrapDek(
+    currentWrapper,
+    envelope.vaultId,
+    envelope.formatVersion,
+    currentCredential,
+  );
+
+  let recoveryPhrase: string | undefined;
+  try {
+    const passphraseWrap = await createPassphraseWrapper(rawDek, envelope.vaultId, newPassphrase);
+    let recoveryWrap: KeyWrapEnvelope | undefined;
+    if (includeRecovery) {
+      recoveryPhrase = generateRecoveryPhrase();
+      recoveryWrap = await createRecoveryWrapper(rawDek, envelope.vaultId, recoveryPhrase);
+    }
+    return {
+      envelope: {
+        ...envelope,
+        keyWraps: {
+          passphrase: passphraseWrap,
+          ...(recoveryWrap ? { recovery: recoveryWrap } : {}),
+        },
+        // The already-encrypted record is deliberately copied unchanged.
+        dummyRecord: envelope.dummyRecord,
+      },
+      ...(recoveryPhrase ? { recoveryPhrase } : {}),
+    };
+  } finally {
+    rawDek.fill(0);
+  }
+}
