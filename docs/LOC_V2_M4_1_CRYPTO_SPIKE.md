@@ -86,11 +86,20 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 - Old exported backups may retain old wrapper envelopes after credential rotation. Rotation cannot revoke copies already exported.
 - WebCrypto's non-extractable key does not protect against malicious same-origin code that can invoke operations while the vault is unlocked.
 
+## Verification recorded for PR #11
+
+- [x] Frontend TypeScript check and production build passed on the latest PR commit.
+- [x] All 22 frontend tests passed in CI, including the crypto-spike tests.
+- [x] Existing Python regression suite passed unchanged (127 tests).
+- [x] Dummy record ciphertext was further bound to vault ID, record ID and format version.
+
+CI run: https://github.com/SanchitKRai/future-health-male-triage/actions/runs/44455904664
+
 ## Exit criteria before M4.2
 
-- [ ] Frontend production build passes.
-- [ ] All crypto-spike tests pass in CI.
-- [ ] Existing Python regression suite passes unchanged.
+- [x] Frontend production build passes.
+- [x] All crypto-spike tests pass in CI.
+- [x] Existing Python regression suite passes unchanged.
 - [ ] Benchmark Argon2id on supported desktop and mobile devices.
 - [ ] Review recovery phrase word encoding, confirmation UX and offline storage guidance.
 - [ ] Independent review of key hierarchy, AAD, IV handling, rotation and backup threat model.
