@@ -402,7 +402,11 @@ function assertWrapperShape(value: unknown, expectedKind: WrapperKind): asserts 
   }
 
   if (expectedKind === "passphrase") {
-    if (value.kdf !== "argon2id-v1.3" || !hasSupportedArgon2idParams(value.argon2id as Argon2idParams | undefined)) {
+    if (!isObject(value.argon2id)) {
+      throw new CryptoSpikeError("Passphrase KDF parameters are malformed.");
+    }
+    assertExactKeys(value.argon2id, ["memorySizeKiB", "iterations", "parallelism", "hashLength"], "Argon2id parameters");
+    if (value.kdf !== "argon2id-v1.3" || !hasSupportedArgon2idParams(value.argon2id as unknown as Argon2idParams)) {
       throw new CryptoSpikeError("Unsupported passphrase KDF metadata or parameters.");
     }
   } else {
