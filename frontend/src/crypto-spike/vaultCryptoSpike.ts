@@ -165,8 +165,8 @@ function wrapperAad(vaultId: string, version: number, wrapper: KeyWrapEnvelope):
   );
 }
 
-function recordAad(recordId: string, version: number): Uint8Array {
-  return encodeText("LOC|record|v" + version + "|" + recordId);
+function recordAad(vaultId: string, recordId: string, version: number): Uint8Array {
+  return encodeText("LOC|record|v" + version + "|" + vaultId + "|" + recordId);
 }
 
 async function importAesKey(raw: Uint8Array, extractable: boolean): Promise<CryptoKey> {
@@ -395,12 +395,12 @@ async function createUnlockedDek(rawDek: Uint8Array): Promise<CryptoKey> {
   return importAesKey(rawDek, false);
 }
 
-async function encryptDummyRecord(rawDek: Uint8Array): Promise<DummyRecordEnvelope> {
+async function encryptDummyRecord(rawDek: Uint8Array, vaultId: string): Promise<DummyRecordEnvelope> {
   const key = await createUnlockedDek(rawDek);
   const encrypted = await encryptBytes(
     key,
     encodeText(DUMMY_PLAINTEXT),
-    recordAad(DUMMY_RECORD_ID, FORMAT_VERSION),
+    recordAad(vaultId, DUMMY_RECORD_ID, FORMAT_VERSION),
   );
   return {
     recordId: DUMMY_RECORD_ID,
@@ -411,6 +411,7 @@ async function encryptDummyRecord(rawDek: Uint8Array): Promise<DummyRecordEnvelo
 
 async function decryptDummyRecord(
   rawDek: Uint8Array,
+  vaultId: string,
   record: DummyRecordEnvelope,
 ): Promise<string> {
   const key = await createUnlockedDek(rawDek);
@@ -418,7 +419,7 @@ async function decryptDummyRecord(
     key,
     record.ivHex,
     record.ciphertextHex,
-    recordAad(record.recordId, record.formatVersion),
+    recordAad(vaultId, record.recordId, record.formatVersion),
   );
   return decodeText(plaintext);
 }
@@ -439,7 +440,7 @@ export async function createDummyVault(
       recoveryPhrase = generateRecoveryPhrase();
       recoveryWrap = await createRecoveryWrapper(rawDek, vaultId, recoveryPhrase);
     }
-    const dummyRecord = await encryptDummyRecord(rawDek);
+    const dummyRecord = await encryptDummyRecord(rawDek, vaultId);
     return {
       envelope: {
         formatVersion: FORMAT_VERSION,
@@ -471,7 +472,7 @@ export async function unlockDummyVault(
 
   const rawDek = await unwrapDek(wrapper, envelope.vaultId, envelope.formatVersion, credential);
   try {
-    return await decryptDummyRecord(rawDek, envelope.dummyRecord);
+    return await decryptDummyRecord(rawDek, envelope.vaultId, envelope.dummyRecord);
   } finally {
     rawDek.fill(0);
   }
