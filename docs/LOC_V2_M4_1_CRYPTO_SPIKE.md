@@ -4,7 +4,7 @@
 
 ## Scope
 
-This spike tests the cryptographic building blocks for the proposed optional offline recovery phrase. It does not enable persistent health-data storage and must not be imported into production pages.
+This spike tests the cryptographic building blocks for the proposed optional offline recovery phrase. A separate development-only benchmark page measures the candidate Argon2id passphrase-derivation cost on real devices. Neither the spike nor benchmark is connected to persistent health-data storage or production LOC screens.
 
 ### Candidate libraries checked
 
@@ -66,6 +66,9 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 - Rejection of tampered wrapper ciphertext, salt, vault ID, record ID, record IV, record ciphertext, KDF parameters and format version.
 - Credential rotation through the recovery phrase; old passphrase and old recovery phrase are rejected, new credentials unlock, and dummy record ciphertext remains unchanged.
 - Passphrase-only vault when recovery is declined.
+- Bounded runtime envelope and credential validation, including rejection of unknown nested Argon2 metadata.
+- Cross-vault encrypted-record substitution rejection.
+- Local Argon2id benchmark runner (one warm-up plus five timed samples; no network or browser persistence).
 
 ## Explicit non-goals
 
@@ -79,7 +82,8 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 
 ## Known limitations / open review items
 
-- Argon2id parameters have not been benchmarked on real low-end mobile hardware.
+- Argon2id parameters have not been benchmarked on real low-end mobile hardware. A local runner is available at `frontend/crypto-benchmark.html`; actual device reports are still pending.
+- The repository does not yet contain `frontend/package-lock.json`, and CI uses `npm install`; dependency resolution is not reproducible enough for a production crypto feature.
 - BIP-39 is a standard mnemonic encoding; LOC uses it as an offline secret representation, not as a cryptocurrency wallet. The recovery UX and threat of photographing/copying the phrase require user testing.
 - The exact production key-wrapping envelope, algorithm/version migration, and backup format still need independent cryptographic review.
 - A recovery phrase only unlocks an existing vault or encrypted backup; it cannot restore a deleted browser profile or lost device without a backup.
@@ -100,10 +104,12 @@ CI run: https://github.com/SanchitKRai/future-health-male-triage/actions/runs/44
 - [x] Frontend production build passes.
 - [x] All crypto-spike tests pass in CI.
 - [x] Existing Python regression suite passes unchanged.
-- [ ] Benchmark Argon2id on supported desktop and mobile devices.
+- [x] Add a local-only Argon2id benchmark runner that uses dummy data and never sends results.
+- [ ] Collect benchmark reports on supported desktop, lower-end Android and mobile Safari devices.
 - [ ] Review recovery phrase word encoding, confirmation UX and offline storage guidance.
 - [ ] Independent review of key hierarchy, AAD, IV handling, rotation and backup threat model.
 - [ ] Approve production KDF parameters and library versions.
-- [ ] Confirm no application route or health-record flow imports this spike module.
+- [x] Confirm no application route or health-record flow imports this spike module.
+- [ ] Add and review a committed npm lockfile; switch CI to `npm ci` before M4.2.
 
 Until all gates are met, the spike remains isolated and encrypted persistent storage remains disabled.
