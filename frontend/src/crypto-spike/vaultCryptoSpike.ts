@@ -412,6 +412,22 @@ function assertWrapperShape(value: unknown, expectedKind: WrapperKind): asserts 
   }
 }
 
+
+function assertUnlockCredential(value: unknown): asserts value is UnlockCredential {
+  if (!isObject(value)) throw new CryptoSpikeError("The unlock credential is malformed.");
+  assertExactKeys(value, ["kind", "secret"], "unlock credential");
+  if (value.kind !== "passphrase" && value.kind !== "recovery") {
+    throw new CryptoSpikeError("Unknown unlock credential type.");
+  }
+  if (typeof value.secret !== "string" || value.secret.length === 0) {
+    throw new CryptoSpikeError("The unlock credential is empty or malformed.");
+  }
+  const maximumLength = value.kind === "recovery" ? 512 : 1024;
+  if (value.secret.length > maximumLength) {
+    throw new CryptoSpikeError("The unlock credential exceeds the supported length.");
+  }
+}
+
 function assertDummyEnvelopeShape(value: unknown): asserts value is CryptoSpikeVaultEnvelope {
   if (!isObject(value)) throw new CryptoSpikeError("The encrypted vault envelope is malformed.");
   assertExactKeys(value, ["formatVersion", "vaultId", "keyWraps", "dummyRecord"], "vault envelope");
@@ -580,6 +596,7 @@ export async function unlockDummyVault(
   credential: UnlockCredential,
 ): Promise<string> {
   assertDummyEnvelopeShape(envelope);
+  assertUnlockCredential(credential);
   const wrapper = credential.kind === "passphrase"
     ? envelope.keyWraps.passphrase
     : envelope.keyWraps.recovery;
@@ -600,6 +617,7 @@ export async function rotateDummyVaultCredentials(
   includeRecovery = true,
 ): Promise<RotatedCryptoSpikeVault> {
   assertDummyEnvelopeShape(envelope);
+  assertUnlockCredential(currentCredential);
   assertPassphrase(newPassphrase);
   const currentWrapper = currentCredential.kind === "passphrase"
     ? envelope.keyWraps.passphrase
