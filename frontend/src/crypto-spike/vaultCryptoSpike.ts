@@ -138,6 +138,16 @@ function assertPassphrase(passphrase: string): string {
   return normalized;
 }
 
+function hasSupportedArgon2idParams(value: KeyWrapEnvelope["argon2id"]): value is NonNullable<KeyWrapEnvelope["argon2id"]> {
+  return Boolean(
+    value &&
+    value.memorySizeKiB === SPIKE_ARGON2ID_PARAMS.memorySizeKiB &&
+    value.iterations === SPIKE_ARGON2ID_PARAMS.iterations &&
+    value.parallelism === SPIKE_ARGON2ID_PARAMS.parallelism &&
+    value.hashLength === SPIKE_ARGON2ID_PARAMS.hashLength,
+  );
+}
+
 function wrapperAad(vaultId: string, version: number, wrapper: KeyWrapEnvelope): Uint8Array {
   const argon = wrapper.argon2id;
   const params = argon
