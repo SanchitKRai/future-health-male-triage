@@ -85,6 +85,15 @@ describe("LOC M4.1 crypto spike — dummy data only", () => {
       secret: passphrase,
     })).rejects.toBeInstanceOf(CryptoSpikeError);
 
+    const saltTamper = cloneEnvelope();
+    saltTamper.keyWraps.passphrase.saltHex =
+      (saltTamper.keyWraps.passphrase.saltHex[0] === "0" ? "1" : "0") +
+      saltTamper.keyWraps.passphrase.saltHex.slice(1);
+    await expect(unlockDummyVault(saltTamper, {
+      kind: "passphrase",
+      secret: passphrase,
+    })).rejects.toBeInstanceOf(CryptoSpikeError);
+
     const vaultIdTamper = cloneEnvelope();
     vaultIdTamper.vaultId = "tampered-vault-id";
     await expect(unlockDummyVault(vaultIdTamper, {
