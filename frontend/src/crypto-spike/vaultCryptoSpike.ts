@@ -17,6 +17,7 @@ const SALT_BYTES = 16;
 const ARGON2_SALT_BYTES = 16;
 const RECOVERY_DOMAIN = "LOC vault recovery KEK v1";
 const DUMMY_RECORD_ID = "loc-crypto-spike-dummy-record";
+const BENCHMARK_PASSPHRASE = "LOC synthetic Argon2id benchmark only - not a user credential";
 export const DUMMY_PLAINTEXT = "LOC crypto spike: synthetic test payload only; not health information.";
 
 export interface Argon2idParams {
@@ -111,8 +112,8 @@ function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function fromHex(value: string): Uint8Array {
-  if (!/^(?:[0-9a-f]{2})*$/i.test(value)) {
+function fromHex(value: string, maxBytes = 16_384): Uint8Array {
+  if (typeof value !== "string" || value.length > maxBytes * 2 || !/^(?:[0-9a-f]{2})*$/i.test(value)) {
     throw new CryptoSpikeError("The crypto envelope contains malformed hexadecimal data.");
   }
   const bytes = new Uint8Array(value.length / 2);
@@ -282,8 +283,8 @@ async function decryptBytes(
   ciphertextHex: string,
   aad: Uint8Array,
 ): Promise<ArrayBuffer> {
-  const iv = fromHex(ivHex);
-  const ciphertext = fromHex(ciphertextHex);
+  const iv = fromHex(ivHex, IV_BYTES);
+  const ciphertext = fromHex(ciphertextHex, DEK_BYTES + 16 + encodeText(DUMMY_PLAINTEXT).length + 16);
   if (iv.byteLength !== IV_BYTES) throw new CryptoSpikeError("The AES-GCM IV must be 12 bytes.");
   try {
     return await subtle().decrypt(
@@ -321,6 +322,68 @@ async function wrapDek(
   return { ...wrapper, ...encrypted };
 }
 
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function assertExactKeys(value: Record<string, unknown>, allowed: string[], label: string): void {
+  const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
+  if (unknown.length > 0) throw new CryptoSpikeError("Unsupported " + label + " field.");
+}
+
+function assertWrapperShape(value: unknown, expectedKind: WrapperKind): asserts value is KeyWrapEnvelope {
+  if (!isObject(value)) throw new CryptoSpikeError("The key wrapper is malformed.");
+  assertExactKeys(value, ["kind", "kdf", "saltHex", "ivHex", "ciphertextHex", "argon2id"], "key wrapper");
+
+  if (value.kind !== expectedKind) throw new CryptoSpikeError("The key wrapper type is invalid.");
+  if (typeof value.saltHex !== "string" || !/^[0-9a-f]{32}$/i.test(value.saltHex)) {
+    throw new CryptoSpikeError("The key-wrapper salt is malformed.");
+  }
+  if (typeof value.ivHex !== "string" || !/^[0-9a-f]{24}$/i.test(value.ivHex)) {
+    throw new CryptoSpikeError("The key-wrapper IV is malformed.");
+  }
+  if (typeof value.ciphertextHex !== "string" || !/^[0-9a-f]{96}$/i.test(value.ciphertextHex)) {
+    throw new CryptoSpikeError("The wrapped data-key ciphertext is malformed.");
+  }
+
+  if (expectedKind === "passphrase") {
+    if (value.kdf !== "argon2id-v1.3" || !hasSupportedArgon2idParams(value.argon2id as Argon2idParams | undefined)) {
+      throw new CryptoSpikeError("Unsupported passphrase KDF metadata or parameters.");
+    }
+  } else {
+    if (value.kdf !== "hkdf-sha256" || value.argon2id !== undefined) {
+      throw new CryptoSpikeError("Unsupported recovery KDF metadata.");
+    }
+  }
+}
+
+function assertDummyEnvelopeShape(value: unknown): asserts value is CryptoSpikeVaultEnvelope {
+  if (!isObject(value)) throw new CryptoSpikeError("The encrypted vault envelope is malformed.");
+  assertExactKeys(value, ["formatVersion", "vaultId", "keyWraps", "dummyRecord"], "vault envelope");
+  if (value.formatVersion !== FORMAT_VERSION) throw new CryptoSpikeError("Unsupported vault format version.");
+  if (typeof value.vaultId !== "string" || !/^[0-9a-f]{32}$/i.test(value.vaultId)) {
+    throw new CryptoSpikeError("The vault identifier is malformed.");
+  }
+  if (!isObject(value.keyWraps)) throw new CryptoSpikeError("The key-wrapper collection is malformed.");
+  assertExactKeys(value.keyWraps, ["passphrase", "recovery"], "key-wrapper collection");
+  assertWrapperShape(value.keyWraps.passphrase, "passphrase");
+  if (value.keyWraps.recovery !== undefined) assertWrapperShape(value.keyWraps.recovery, "recovery");
+
+  if (!isObject(value.dummyRecord)) throw new CryptoSpikeError("The encrypted dummy record is malformed.");
+  assertExactKeys(value.dummyRecord, ["recordId", "formatVersion", "ivHex", "ciphertextHex"], "dummy record");
+  if (value.dummyRecord.recordId !== DUMMY_RECORD_ID || value.dummyRecord.formatVersion !== FORMAT_VERSION) {
+    throw new CryptoSpikeError("Unsupported dummy record identifier or format version.");
+  }
+  if (typeof value.dummyRecord.ivHex !== "string" || !/^[0-9a-f]{24}$/i.test(value.dummyRecord.ivHex)) {
+    throw new CryptoSpikeError("The dummy-record IV is malformed.");
+  }
+  const expectedCiphertextBytes = encodeText(DUMMY_PLAINTEXT).byteLength + 16;
+  if (typeof value.dummyRecord.ciphertextHex !== "string" || value.dummyRecord.ciphertextHex.length !== expectedCiphertextBytes * 2 || !/^[0-9a-f]+$/i.test(value.dummyRecord.ciphertextHex)) {
+    throw new CryptoSpikeError("The dummy-record ciphertext is malformed.");
+  }
+}
+
 async function unwrapDek(
   wrapper: KeyWrapEnvelope,
   vaultId: string,
@@ -331,7 +394,7 @@ async function unwrapDek(
     throw new CryptoSpikeError("The selected credential does not match this key wrapper.");
   }
 
-  const salt = fromHex(wrapper.saltHex);
+  const salt = fromHex(wrapper.saltHex, SALT_BYTES);
   if (salt.byteLength !== SALT_BYTES) throw new CryptoSpikeError("The key-wrapper salt is malformed.");
 
   let wrappingKey: CryptoKey;
@@ -462,9 +525,7 @@ export async function unlockDummyVault(
   envelope: CryptoSpikeVaultEnvelope,
   credential: UnlockCredential,
 ): Promise<string> {
-  if (envelope.formatVersion !== FORMAT_VERSION) {
-    throw new CryptoSpikeError("Unsupported vault format version.");
-  }
+  assertDummyEnvelopeShape(envelope);
   const wrapper = credential.kind === "passphrase"
     ? envelope.keyWraps.passphrase
     : envelope.keyWraps.recovery;
@@ -484,6 +545,7 @@ export async function rotateDummyVaultCredentials(
   newPassphrase: string,
   includeRecovery = true,
 ): Promise<RotatedCryptoSpikeVault> {
+  assertDummyEnvelopeShape(envelope);
   assertPassphrase(newPassphrase);
   const currentWrapper = currentCredential.kind === "passphrase"
     ? envelope.keyWraps.passphrase
