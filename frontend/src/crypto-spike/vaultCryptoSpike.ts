@@ -19,7 +19,7 @@ const RECOVERY_DOMAIN = "LOC vault recovery KEK v1";
 const DUMMY_RECORD_ID = "loc-crypto-spike-dummy-record";
 export const DUMMY_PLAINTEXT = "LOC crypto spike: synthetic test payload only; not health information.";
 
-export const SPIKE_ARGON2ID_PARAMS = Object.freeze({
+export interface Argon2idParams { memorySizeKiB: number; iterations: number; parallelism: number; hashLength: number; }\n\nexport const SPIKE_ARGON2ID_PARAMS: Argon2idParams = {
   memorySizeKiB: 19_456,
   iterations: 2,
   parallelism: 1,
@@ -138,7 +138,7 @@ function assertPassphrase(passphrase: string): string {
   return normalized;
 }
 
-function hasSupportedArgon2idParams(value: KeyWrapEnvelope["argon2id"]): value is NonNullable<KeyWrapEnvelope["argon2id"]> {
+function hasSupportedArgon2idParams(value: Argon2idParams | undefined): value is Argon2idParams {
   return Boolean(
     value &&
     value.memorySizeKiB === SPIKE_ARGON2ID_PARAMS.memorySizeKiB &&
@@ -175,7 +175,7 @@ async function importAesKey(raw: Uint8Array, extractable: boolean): Promise<Cryp
 async function derivePassphraseKey(
   passphrase: string,
   salt: Uint8Array,
-  params = SPIKE_ARGON2ID_PARAMS,
+  params: Argon2idParams = SPIKE_ARGON2ID_PARAMS,
 ): Promise<CryptoKey> {
   const normalized = assertPassphrase(passphrase);
   const output = await argon2id({
@@ -300,7 +300,7 @@ async function wrapDek(
   kind: WrapperKind,
   key: CryptoKey,
   salt: Uint8Array,
-  argonParams?: typeof SPIKE_ARGON2ID_PARAMS,
+  argonParams?: Argon2idParams,
 ): Promise<KeyWrapEnvelope> {
   const wrapper: KeyWrapEnvelope = {
     kind,
