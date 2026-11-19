@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-19
 
-**Status:** Benchmark harness implemented; real-device measurements pending. This document is an internal code review/pre-review, **not an independent cryptographic audit**. M4.2 IndexedDB persistence remains blocked.
+**Status:** Benchmark harness implemented; CI passed on PR #12; real-device measurements pending. This document is an internal code review/pre-review, **not an independent cryptographic audit**. M4.2 IndexedDB persistence remains blocked.
 
 ## 1. Run the on-device benchmark
 
