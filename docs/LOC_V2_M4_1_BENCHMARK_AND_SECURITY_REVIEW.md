@@ -110,7 +110,9 @@ Scope: `frontend/src/crypto-spike/vaultCryptoSpike.ts`, its unit tests and the b
 
 **Risk:** The 19 MiB / 2-iteration / parallelism-1 configuration is the documented minimum baseline used for the spike; it has not been benchmarked on supported low-end mobile hardware and has not been independently reviewed for this product's threat model.
 
-**Action:** Collect on-device reports, select the supported-browser/device matrix and agree on acceptable unlock latency. Do not reduce the KDF below the baseline to make one device faster without a formal security decision.
+**Evidence collected:** Initial desktop reference and nine mobile sessions across broad Android Chrome, iPhone/iPad Safari and other-mobile-browser labels are recorded. The raw mobile samples validate their JSON summary statistics. The exact device models/builds are not captured, and the “other mobile browser” is not precisely identified. These are preliminary measurements, not a formal supported-device matrix.
+
+**Action:** Select the supported-browser/device matrix, collect exact non-identifying browser/OS version metadata where feasible, and agree on acceptable unlock latency. Do not reduce the KDF below the baseline to make one device faster without a formal security decision.
 
 #### SR-05 — Credential rotation does not remediate a compromised DEK
 
@@ -148,7 +150,13 @@ Scope: `frontend/src/crypto-spike/vaultCryptoSpike.ts`, its unit tests and the b
 
 **Action:** Do not enable health-record persistence until all of those behaviours are designed, implemented, tested and manually reviewed.
 
-## 3. M4.2 entry gate
+## 3. Independent review handoff
+
+A reviewer-specific scope and evidence package has been prepared in [`LOC_V2_M4_1_INDEPENDENT_CRYPTO_REVIEW_BRIEF.md`](LOC_V2_M4_1_INDEPENDENT_CRYPTO_REVIEW_BRIEF.md). Tracking issue: [#13 — Obtain independent cryptographic review before M4.2](https://github.com/SanchitKRai/future-health-male-triage/issues/13).
+
+This is a handoff document only. No independent cryptographic review has been performed. The reviewer must provide a written, severity-rated report covering the exact commit and source files reviewed, methods, exclusions, remediation and entry conditions for M4.2.
+
+## 4. M4.2 entry gate
 
 M4.2 must not start until all of the following are true:
 
@@ -162,4 +170,4 @@ M4.2 must not start until all of the following are true:
 - [ ] Threat model updated for IndexedDB, XSS, browser profile, device loss, backups and deletion.
 - [ ] No health record is written persistently by default; opt-in remains a separately gated milestone.
 
-**Current decision:** Initial desktop/mobile performance evidence is collected and documented. Final support-matrix approval, production KDF/dependency approval, independent cryptographic review and the remaining entry gates are still pending. M4.2 IndexedDB adapter is blocked.
+**Current decision:** Initial desktop/mobile performance evidence is collected and documented; the independent-review handoff package and tracking issue are prepared. Final support-matrix approval, production KDF/dependency approval, independent cryptographic review and the remaining entry gates are still pending. M4.2 IndexedDB adapter is blocked.
