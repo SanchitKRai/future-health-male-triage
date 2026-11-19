@@ -37,6 +37,10 @@ Open the local address printed by Vite (normally `http://127.0.0.1:5173`). This 
 
 Optional API origin override: copy `.env.example` to `.env.local` and change `VITE_LOC_API_URL`. Keep it pointed at a trusted local service. Do not point health submissions to a public or third-party endpoint.
 
+## M4.1 on-device Argon2id benchmark (dummy data only)
+
+While the Vite dev server is running, open `http://127.0.0.1:5173/crypto-benchmark.html`. The benchmark performs one warm-up and five measured Argon2id passphrase-key derivations using a fixed synthetic test passphrase and fresh random salts. It never asks for a real passphrase or recovery phrase, and it does not send or persist benchmark results. Download the JSON report locally and compare results across supported devices. Do not change KDF settings based on one run or lower them below the documented baseline to improve performance.
+
 ## Build and test
 
 Frontend:
@@ -78,6 +82,6 @@ python -m pytest -q
 - The local API binds to loopback only when launched with `python -m api`; do not expose it to a LAN or public network.
 - Request/response caching is disabled and Uvicorn access logs are disabled in the provided entry point. No health payload is written to a database, file, browser storage or application log.
 - Do not enter real health information on a shared or untrusted device. Browser memory and a localhost service are not a substitute for a security audit.
-- Encrypted persistent storage, ML integration and provider navigation are separate future milestones.
+- Encrypted persistent storage remains disabled pending device benchmarking, reproducible dependency locking and independent cryptographic review. See `docs/LOC_V2_M4_1_BENCHMARK_AND_SECURITY_REVIEW.md`.
 
 This remains a research and demonstration prototype. Its thresholds are design defaults awaiting independent clinician review, and the ML model is trained on simulated data rather than real patients.

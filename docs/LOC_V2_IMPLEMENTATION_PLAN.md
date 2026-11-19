@@ -69,9 +69,11 @@ The local API is required for React to use the existing Python rules engine. The
 - [x] Draft threat model and encrypted-storage architecture proposal.
 - [ ] Approve final KDF parameters, key hierarchy and browser support matrix after crypto review.
 - [x] Build an isolated Web Crypto + Argon2id + BIP-39/HKDF spike with dummy data only.
+- [x] Add runtime shape validation and bounded parsing to the dummy envelope path.
+- [x] Add a local-only on-device Argon2id benchmark page.
 - [x] Pass frontend build, 22 frontend tests and 127 unchanged Python regression tests in CI.
-- [ ] Benchmark Argon2id on supported desktop and lower-end mobile devices.
-- [ ] Independent cryptographic review of envelope, key derivation, AAD and rotation.
+- [ ] Collect Argon2id benchmark reports on supported desktop, lower-end Android and iOS Safari devices using `frontend/crypto-benchmark.html`.
+- [ ] Complete independent cryptographic review of envelope, key derivation, AAD, rotation and key-compromise response.
 - [ ] Implement versioned IndexedDB adapter with no plaintext health metadata.
 - [ ] Add explicit opt-in, passphrase, unlock, lock and inactivity lock.
 - [ ] Add encrypted backup/restore, passphrase change and deletion flows.

@@ -4,7 +4,7 @@
 
 ## Scope
 
-This spike tests the cryptographic building blocks for the proposed optional offline recovery phrase. It does not enable persistent health-data storage and must not be imported into production pages.
+This spike tests the cryptographic building blocks for the proposed optional offline recovery phrase. A separate development-only benchmark page measures the candidate Argon2id passphrase-derivation cost on real devices. Neither the spike nor benchmark is connected to persistent health-data storage or production LOC screens.
 
 ### Candidate libraries checked
 
@@ -66,6 +66,9 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 - Rejection of tampered wrapper ciphertext, salt, vault ID, record ID, record IV, record ciphertext, KDF parameters and format version.
 - Credential rotation through the recovery phrase; old passphrase and old recovery phrase are rejected, new credentials unlock, and dummy record ciphertext remains unchanged.
 - Passphrase-only vault when recovery is declined.
+- Bounded runtime envelope and credential validation, including rejection of unknown nested Argon2 metadata.
+- Cross-vault encrypted-record substitution rejection.
+- Local Argon2id benchmark runner (one warm-up plus five timed samples; no network or browser persistence).
 
 ## Explicit non-goals
 
@@ -79,31 +82,38 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 
 ## Known limitations / open review items
 
-- Argon2id parameters have not been benchmarked on real low-end mobile hardware.
+- Argon2id parameters have not been benchmarked on real low-end mobile hardware. A local runner is available at `frontend/crypto-benchmark.html`; actual device reports are still pending.
+- The repository does not yet contain `frontend/package-lock.json`, and CI uses `npm install`; dependency resolution is not reproducible enough for a production crypto feature.
 - BIP-39 is a standard mnemonic encoding; LOC uses it as an offline secret representation, not as a cryptocurrency wallet. The recovery UX and threat of photographing/copying the phrase require user testing.
 - The exact production key-wrapping envelope, algorithm/version migration, and backup format still need independent cryptographic review.
 - A recovery phrase only unlocks an existing vault or encrypted backup; it cannot restore a deleted browser profile or lost device without a backup.
 - Old exported backups may retain old wrapper envelopes after credential rotation. Rotation cannot revoke copies already exported.
 - WebCrypto's non-extractable key does not protect against malicious same-origin code that can invoke operations while the vault is unlocked.
 
-## Verification recorded for PR #11
+## Verification recorded for M4.1
 
-- [x] Frontend TypeScript check and production build passed on the latest PR commit.
-- [x] All 22 frontend tests passed in CI, including the crypto-spike tests.
-- [x] Existing Python regression suite passed unchanged (127 tests).
-- [x] Dummy record ciphertext was further bound to vault ID, record ID and format version.
+- [x] Frontend TypeScript check and production build passed on PR #11.
+- [x] 22 frontend tests passed in CI on PR #11.
+- [x] Existing Python regression suite passed unchanged (127 tests) on PR #11.
+- [x] Dummy record ciphertext is bound to vault ID, record ID and format version.
+- [x] The follow-up benchmark/review branch passes frontend production build and all 25 frontend tests.
+- [x] The follow-up branch passes the unchanged Python regression suite (127 tests).
+- [x] The follow-up branch includes bounded runtime validation for the dummy envelope and credential object.
 
-CI run: https://github.com/SanchitKRai/future-health-male-triage/actions/runs/44455904664
+Follow-up CI run: https://github.com/SanchitKRai/future-health-male-triage/actions/runs/44463216661
 
 ## Exit criteria before M4.2
 
 - [x] Frontend production build passes.
-- [x] All crypto-spike tests pass in CI.
-- [x] Existing Python regression suite passes unchanged.
-- [ ] Benchmark Argon2id on supported desktop and mobile devices.
+- [x] All crypto-spike and benchmark unit tests pass in CI (25 frontend tests total on the follow-up branch).
+- [x] Existing Python regression suite passes unchanged (127 tests).
+- [x] Local on-device benchmark runner is implemented.
+- [x] Add a local-only Argon2id benchmark runner that uses dummy data and never sends results.
+- [ ] Collect benchmark reports on supported desktop, lower-end Android and mobile Safari devices.
 - [ ] Review recovery phrase word encoding, confirmation UX and offline storage guidance.
 - [ ] Independent review of key hierarchy, AAD, IV handling, rotation and backup threat model.
 - [ ] Approve production KDF parameters and library versions.
-- [ ] Confirm no application route or health-record flow imports this spike module.
+- [x] Confirm no application route or health-record flow imports this spike module.
+- [ ] Add and review a committed npm lockfile; switch CI to `npm ci` before M4.2.
 
 Until all gates are met, the spike remains isolated and encrypted persistent storage remains disabled.
