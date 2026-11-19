@@ -352,3 +352,89 @@ button:focus-visible,a:focus-visible{outline:3px solid #91b38a;outline-offset:3p
 @media(max-width:900px){.timeline-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.timeline-toolbar{align-items:flex-start;flex-direction:column}.timeline-toolbar-actions{width:100%}.timeline-toolbar-actions .button{flex:1}.timeline-panel{padding:16px 13px}.timeline-panel-heading{align-items:flex-start;flex-direction:column}.trend-select-wrap,.trend-select-wrap .screen-input{width:100%;min-width:0}.record-composer{padding:17px 13px}.timeline-stat-grid{gap:8px}.timeline-stat-card{padding:12px}.timeline-stat-card>strong{font-size:19px}.timeline-filter-tabs{gap:5px}.timeline-filter-tab{padding:7px 9px}.record-kind-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.record-kind-tab{justify-content:center}.record-form-grid{grid-template-columns:1fr}.record-field-wide{grid-column:auto}.record-field-help{grid-column:auto}.record-reference-grid{grid-template-columns:1fr 1fr}.timeline-record{gap:9px}.timeline-record-main p{font-size:9px}}
 @media(max-width:400px){.timeline-stat-grid{grid-template-columns:1fr 1fr}.timeline-filter-tab{font-size:8px}.timeline-stat-top{font-size:8px}}
+
+
+/* LOC V2 M3 mobile-width containment for record entry */
+.record-composer{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.record-composer *,
+.record-composer *::before,
+.record-composer *::after{
+  box-sizing:border-box;
+  min-width:0;
+}
+.record-composer-top,
+.record-form,
+.record-form-grid,
+.record-reference-box,
+.record-kind-tabs{
+  min-width:0;
+  max-width:100%;
+}
+.record-form-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.record-field{
+  min-width:0;
+  max-width:100%;
+}
+.record-field input,
+.record-field select,
+.record-field .screen-input{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+.record-kind-tab{
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+}
+.record-field-help{
+  overflow-wrap:anywhere;
+}
+@media(max-width:650px){
+  .record-composer{
+    width:100%;
+    max-width:100%;
+    padding:16px 12px;
+  }
+  .record-composer-top{
+    gap:8px;
+  }
+  .record-composer-top>div{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+  .record-form-grid,
+  .record-reference-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .record-field-wide{
+    grid-column:1;
+  }
+  .record-reference-box{
+    padding:10px;
+  }
+  .record-form-actions{
+    flex-wrap:wrap;
+  }
+  .record-form-actions .button{
+    flex:1 1 120px;
+    min-width:0;
+  }
+}
+@media(max-width:360px){
+  .record-composer{
+    padding:14px 10px;
+  }
+  .record-kind-tab{
+    gap:5px;
+    padding:8px 7px;
+    font-size:8px;
+  }
+}
