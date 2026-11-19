@@ -65,13 +65,21 @@ The local API is required for React to use the existing Python rules engine. The
 - Handle unavailable model, low confidence and missing data without false reassurance.
 - Do not call a model score a clinical probability without external validation and calibration.
 
+### M4 — Encrypted local storage (design first)
+- [x] Draft threat model and encrypted-storage architecture proposal.
+- [ ] Approve KDF, key hierarchy and browser support matrix.
+- [ ] Prove Web Crypto encrypt/decrypt and key-wrapping with dummy data only.
+- [ ] Implement versioned IndexedDB adapter with no plaintext health metadata.
+- [ ] Add explicit opt-in, passphrase, unlock, lock and inactivity lock.
+- [ ] Add encrypted backup/restore, passphrase change and deletion flows.
+- [ ] Pass crypto, XSS/CSP, browser-storage and independent review gates.
+- Keep session-only mode as the default; no silent persistence or cloud sync.
+
 ### M5 — Care navigation and privacy
 - Plain-language next-step guidance and safety-net wording.
 - Provider discovery only from verifiable sources; clearly label demo content.
 - No false booking/referral claims.
 - Explicit consent before export/share.
-- Encrypted IndexedDB only after threat model, key lifecycle, idle-lock and deletion review.
-- User-controlled export, clear and deletion.
 
 ### M6 — Quality and release
 - Clinical rule regression suite and independent clinician review.
