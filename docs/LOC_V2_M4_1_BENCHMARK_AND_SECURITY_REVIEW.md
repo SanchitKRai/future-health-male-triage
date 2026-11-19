@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-19
 
-**Status:** Benchmark harness implemented; CI passed on PR #12; real-device measurements pending. This document is an internal code review/pre-review, **not an independent cryptographic audit**. M4.2 IndexedDB persistence remains blocked.
+**Status:** Benchmark harness implemented; CI passed on PR #12; desktop baseline and nine mobile sessions collected and arithmetically validated. Independent cryptographic review remains pending. This document is an internal code review/pre-review, **not an independent cryptographic audit**. M4.2 IndexedDB persistence remains blocked.
 
 ## 1. Run the on-device benchmark
 
@@ -49,6 +49,23 @@ Record model/class, OS version and browser version in the optional device label 
 - Do not compare warm-up time with steady-state samples.
 - Do not treat a desktop GitHub Actions result as a mobile benchmark.
 - No pass/fail latency threshold is approved yet. The supported device matrix and acceptable unlock delay must be agreed before final Argon2id parameters are selected.
+
+
+### Collected live-device benchmark evidence
+
+The temporary isolated static benchmark was deployed from [`SanchitKRai/loc-m4-1-mobile-benchmark`](https://github.com/SanchitKRai/loc-m4-1-mobile-benchmark). Nine JSON reports (three sessions for each of three mobile browser profiles), plus broad device metadata, are stored in [`docs/benchmarks/live_mobile/`](https://github.com/SanchitKRai/loc-m4-1-mobile-benchmark/tree/main/docs/benchmarks/live_mobile).
+
+| Profile | Three session medians | Average session median |
+|---|---:|---:|
+| Android phone · Chrome | 43.5, 43.8, 43.5 ms | **43.6 ms** |
+| iPhone / iPad · Safari | 46.7, 45.1, 43.7 ms | **45.2 ms** |
+| Other mobile browser | 43.6, 43.9, 41.7 ms | **43.1 ms** |
+
+Across the nine mobile sessions, the average of session medians is **43.9 ms**; the pooled median of all 45 measured samples is **43.8 ms** (range **41.0–55.6 ms**). The desktop reference is **48.9 ms**, calculated from its three session medians (45.5, 53.8 and 47.3 ms). Desktop raw samples are not part of the mobile report directory.
+
+**Interpretation:** The benchmark measures Argon2id v1.3 derivation plus Web Crypto import of a non-extractable AES-GCM key. It does not measure end-to-end vault unlock, IndexedDB, record decryption or rendering. Device labels are broad; exact model/OS/browser build evidence is not available, and the “Other mobile browser” profile is not identified precisely enough to become a named support target. The collection is therefore useful initial performance evidence, not approval of the final support matrix or KDF parameters.
+
+The candidate remains unchanged at **19,456 KiB memory, 2 iterations, parallelism 1 and 32-byte output**. No production KDF decision is implied by the observed timings.
 
 ## 2. Internal static security pre-review
 
@@ -135,8 +152,8 @@ Scope: `frontend/src/crypto-spike/vaultCryptoSpike.ts`, its unit tests and the b
 
 M4.2 must not start until all of the following are true:
 
-- [ ] Benchmark reports received from the agreed desktop and mobile support matrix.
-- [ ] Supported browser/device matrix and acceptable unlock latency approved.
+- [x] Initial desktop baseline and nine mobile-session reports collected; all stored mobile session medians/minima/maxima checked against their five raw samples.
+- [ ] Formal supported browser/device matrix and acceptable unlock latency approved.
 - [ ] Final Argon2id parameters and dependency versions approved.
 - [ ] `package-lock.json` committed and CI switched to `npm ci`.
 - [ ] Independent cryptographic review completed and findings resolved or explicitly accepted.
@@ -145,4 +162,4 @@ M4.2 must not start until all of the following are true:
 - [ ] Threat model updated for IndexedDB, XSS, browser profile, device loss, backups and deletion.
 - [ ] No health record is written persistently by default; opt-in remains a separately gated milestone.
 
-**Current decision:** M4.1 benchmark tooling and internal review are in progress. M4.2 IndexedDB adapter is blocked.
+**Current decision:** Initial desktop/mobile performance evidence is collected and documented. Final support-matrix approval, production KDF/dependency approval, independent cryptographic review and the remaining entry gates are still pending. M4.2 IndexedDB adapter is blocked.
