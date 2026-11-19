@@ -178,6 +178,48 @@ describe("LOC M4.1 crypto spike — dummy data only", () => {
     })).toBe(DUMMY_PLAINTEXT);
   });
 
+
+  it("runs a benchmark warm-up and returns repeatable timing samples", async () => {
+    const { runArgon2idBenchmark } = await import("./vaultCryptoSpike");
+    const report = await runArgon2idBenchmark(3);
+    expect(report.samplesMs).toHaveLength(3);
+    expect(report.samplesMs.every((sample) => Number.isFinite(sample) && sample >= 0)).toBe(true);
+    expect(report.minMs).toBeLessThanOrEqual(report.medianMs);
+    expect(report.medianMs).toBeLessThanOrEqual(report.maxMs);
+    expect(report.parameters).toEqual(SPIKE_ARGON2ID_PARAMS);
+  }, 30_000);
+
+  it("rejects malformed envelopes and oversized fields before cryptographic work", async () => {
+    const extraField = cloneEnvelope() as CryptoSpikeVaultEnvelope & { unexpected?: string };
+    extraField.unexpected = "not supported";
+    await expect(unlockDummyVault(extraField, {
+      kind: "passphrase",
+      secret: passphrase,
+    })).rejects.toBeInstanceOf(CryptoSpikeError);
+
+    const oversizedCiphertext = cloneEnvelope();
+    oversizedCiphertext.keyWraps.passphrase.ciphertextHex = "a".repeat(40_000);
+    await expect(unlockDummyVault(oversizedCiphertext, {
+      kind: "passphrase",
+      secret: passphrase,
+    })).rejects.toBeInstanceOf(CryptoSpikeError);
+
+    await expect(unlockDummyVault(cloneEnvelope(), {
+      kind: "passphrase",
+      secret: "x".repeat(2_000),
+    })).rejects.toBeInstanceOf(CryptoSpikeError);
+  });
+
+  it("rejects copying an encrypted record from a different vault", async () => {
+    const other = await createDummyVault("another distinct LOC dummy passphrase", false);
+    const transplanted = cloneEnvelope();
+    transplanted.dummyRecord = other.envelope.dummyRecord;
+    await expect(unlockDummyVault(transplanted, {
+      kind: "passphrase",
+      secret: passphrase,
+    })).rejects.toBeInstanceOf(CryptoSpikeError);
+  }, 30_000);
+
   it("supports a passphrase-only vault when recovery is declined", async () => {
     const passphraseOnly = await createDummyVault("a different LOC passphrase with enough length", false);
     expect(passphraseOnly.recoveryPhrase).toBeUndefined();
