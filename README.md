@@ -1,161 +1,193 @@
-# LOC — Men's Health Screening & Care Navigation
+# LOC — Private Men's Health Check
 
-**A privacy-first, explainable men's health screening and care-navigation prototype.** LOC helps users organise relevant health context, understand screening pathways and prepare for conversations with qualified healthcare professionals.
+**A privacy-conscious, rules-first screening and care-navigation research prototype for male reproductive health.**
 
-> **Clinical boundary:** LOC supports screening and navigation only. It does not diagnose, predict fertility, prescribe treatment or replace a clinician. Existing clinical thresholds are design defaults awaiting independent clinical review. The ML second opinion uses simulated data and is not clinically validated.
+LOC is designed to help adult men organise relevant health context, recognise when symptoms may need urgent attention, and understand a possible next step to discuss with a qualified healthcare professional.
 
-## LOC V2 — active development
+> **Clinical boundary:** LOC is a research and demonstration prototype. It does not diagnose, predict fertility, prescribe treatment or replace a clinician. The triage thresholds are design defaults awaiting independent clinical review. No real-world clinical validation or patient-outcome claim is made.
 
-The V2 frontend uses React, TypeScript and Vite. The guided screening flow has been merged into `main`; follow-up UI refinements are tracked separately. The product direction is local-first: no mandatory account, no automatic cloud synchronization and no third-party health-data analytics.
+## Current build: LOC V2
 
-- Frontend and local API quick start: see [frontend/README.md](frontend/README.md).
-- Product roadmap and safeguards: see [docs/LOC_V2_IMPLEMENTATION_PLAN.md](docs/LOC_V2_IMPLEMENTATION_PLAN.md).
-- Local data and API boundaries: see [docs/LOC_V2_DATA_AND_API_BOUNDARIES.md](docs/LOC_V2_DATA_AND_API_BOUNDARIES.md).
-- Screening flow and clinical-engine mapping: see [docs/LOC_V2_SCREENING_FLOW.md](docs/LOC_V2_SCREENING_FLOW.md).
-- The screening API calls the preserved Python rules engine only. The experimental ML second opinion is not yet connected to the React workflow. The health timeline supports manually entered lab, vital, lifestyle and workplace exposure records in memory only. Encrypted storage remains disabled. The optional offline recovery phrase is the approved product direction. M4.1 includes an isolated dummy-data crypto spike and a local Argon2id benchmark page; device measurements and independent crypto review remain pending. See [M4.1 benchmark and review plan](docs/LOC_V2_M4_1_BENCHMARK_AND_SECURITY_REVIEW.md), [crypto spike](docs/LOC_V2_M4_1_CRYPTO_SPIKE.md) and [encrypted storage architecture](docs/LOC_V2_ENCRYPTED_STORAGE_ARCHITECTURE.md).
+The active V2 interface is built with **React, TypeScript and Vite**. It communicates with a **local FastAPI service**, which validates the request and calls the existing Python triage engine. The browser does not reimplement clinical rules.
 
-## Original Streamlit prototype
+### What currently works in V2
 
-The original Streamlit application and Python clinical/ML modules remain preserved at the repository root. The current V2 work does not replace or modify those clinical modules.
+- Responsive application shell and overview dashboard.
+- Guided screening flow: consent and adult-age gate, urgent symptoms, personal context, medical history, lifestyle, review and result.
+- Emergency red-flag questions are checked before routine questions. A positive emergency red flag short-circuits the routine questionnaire and presents urgent guidance.
+- Skipped and “Prefer not to say” answers remain unknown (`None`/`null`); they are not silently converted to “No”.
+- FastAPI validates a strict request model and maps inputs to the existing `triage.Intake` dataclass and `evaluate()` function.
+- Results show the rules-based outcome, timeframe, safety-net messages and factors returned by the rules engine.
+- User-initiated clinician-summary download.
+- Manual health timeline entries for laboratory results, vital measurements, lifestyle check-ins and occupational exposures.
+- Timeline category filters, per-record deletion and user-requested JSON export.
+- Trend charts group only matching metric names and units.
 
-# Legacy Streamlit application
-**A private, rules-first screening tool that tells a man whether a check-up, a specialist visit, a fertility assessment or no visit at all makes sense, and how soon.**
+### Important implementation boundaries
 
-Built as a prototype for the **Future Health Digital Innovation Challenge**. It runs as a [Streamlit](https://streamlit.io) app, keeps answers in the browser session only, and uses simulated data for its machine-learning second opinion.
+- **The React V2 workflow calls deterministic Python rules only.** The original XGBoost / TreeSHAP second-opinion model is not invoked by the V2 screening flow.
+- The timeline is contextual history only. It does not change the existing reproductive-health triage score.
+- V2 state is held in memory only. Browser refresh or closing the app may clear it.
+- No health-record database, `localStorage`, `IndexedDB`, cloud persistence or automatic synchronization is enabled.
+- The local API is intended to bind to `127.0.0.1` only. Do not expose it to a LAN or public network.
+- Do not enter real or identifiable health information in this development build, particularly on shared or untrusted devices.
 
-> **Screening support only.** This is not a diagnosis, a fertility prediction or a replacement for seeing a doctor. Thresholds are design defaults awaiting clinical review, and the model is trained on a simulated population, not real patients.
+## Architecture
 
-<p align="center">
-  <img src="screenshot-welcome.png" alt="Welcome screen with screening disclaimer, privacy statement and consent controls" width="48%">
-  <img src="screenshot-questions.png" alt="Step 1 of 4: urgent symptom questions" width="48%">
-</p>
+```text
+React + TypeScript + Vite
+  - Guided screening UI
+  - Result and safety-net presentation
+  - Manual health timeline and trend views
+  - In-memory session state
+          |
+          | local HTTP request
+          v
+FastAPI (loopback only)
+  - Strict request validation
+  - Maps fields to the existing Python Intake
+          |
+          v
+Python triage.py
+  - Existing deterministic rules
+  - evaluate() is the source of screening decisions
 
----
+Separate / not connected to the V2 screening flow:
+  - Legacy Streamlit application and synthetic-data ML model
+  - M4.1 dummy-data encryption proof of concept
+```
 
-## Why it exists
+## Run LOC V2 locally
 
-Many men delay seeking help for testicular, sexual or fertility concerns because the topic feels private or awkward. This tool gives a short, anonymous first step:
+### Requirements
 
-- It asks only questions that change the result, and **every question can be skipped**.
-- It works for any stage of life, with or without plans to have children.
-- It never lets "prefer not to say" count against the user on its own.
-- It gives a clear next step with a timeframe, plain-language reasons, and a summary the user can choose to share.
+- Python 3.10 or newer
+- Node.js 22.12 or newer
+- npm
 
-## How it works
+Keep two terminals open.
 
-1. **Safety first.** Urgent symptoms (sudden severe testicular pain, sudden swelling, fever with pain, a painful erection over 4 hours, groin injury with swelling) are checked before anything else and always override the rest. A new lump, blood in semen or an ache lasting more than two weeks routes to a prompt assessment.
-2. **Transparent rules.** A written scoring protocol (`triage.py`) weighs history, health and lifestyle factors and returns one of the outcomes below.
-3. **Second opinion.** A small gradient-boosted model (`model.py`) rates risk independently. If it rates **higher** than the rules, the more cautious level is used. It can never lower a result, and it cannot overrule an urgent, specialist or fertility-timing rule.
-4. **You decide.** Sharing anything with a clinic is optional and tick-box controlled.
-
-### Possible outcomes
-
-| Outcome | Timeframe |
-|---|---|
-| Urgent emergency care | Today, without waiting |
-| Urgent assessment | Within a few days |
-| Andrology / urology visit | Next few weeks |
-| Fertility assessment | Next few weeks |
-| Primary care visit | Next month or so |
-| Self-care, re-check later | 6 to 12 months, or sooner if anything changes |
-
-If the age or consent requirement isn't met, the app stops with a "can't continue yet" screen.
-
-### The second-opinion model
-
-- 19 predictors, such as age, history, BMI, tobacco, heavy alcohol and listed medicines.
-- Depth-1 boosted trees with exact additive SHAP attributions, so each result can show the factors that drove it and whether each can be changed.
-- Monotone constraints: more risk factors never lower the predicted risk.
-- Uses native `xgboost` when the OS allows it, and falls back automatically to a pure-NumPy implementation. It has no scikit-learn dependency, which avoids Windows Application Control DLL blocks.
-- Trained at app start on a synthetic cohort (`cohort.py`, seed `20261023`). Probabilities are never shown to users, only a band and the main contributing factors.
-- If the model can't load, the app keeps working in rules-only mode.
-
-## Privacy
-
-- Answers live only in the browser session (`st.session_state`). Nothing is written to disk or a database.
-- Height and weight are used to compute BMI and are not stored.
-- "Delete my answers and start again" clears the session.
-- The downloadable clinician summary contains only the sections the user ticks.
-- Streamlit's own usage statistics are turned off in `.streamlit/config.toml`.
-- The interface loads fonts from Google Fonts. To avoid that request entirely, self-host Newsreader and Public Sans and remove the `@import` line in `app.py`.
-
-## Quick start
-
-Requires Python 3.10 or newer.
+**Terminal 1 — local API (from the repository root):**
 
 ```bash
-git clone <your-repo-url> future-health-male-triage
-cd future-health-male-triage
-
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
 
+# Windows PowerShell
+.venv\\Scripts\\Activate.ps1
+
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+python -m api
+```
+
+The API is expected at `http://127.0.0.1:8000`. Useful checks:
+
+- `GET /` — local service summary
+- `GET /api/health` — process health check
+
+**Terminal 2 — frontend:**
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite (normally `http://127.0.0.1:5173`).
+
+Optional API origin override: copy `frontend/.env.example` to `frontend/.env.local` and set `VITE_LOC_API_URL` only to a trusted local service. Do not point health submissions to a public or third-party endpoint.
+
+### Build and tests
+
+Frontend:
+
+```bash
+cd frontend
+npm run build
+npm test
+```
+
+Python regression tests from the repository root:
+
+```bash
+python -m pytest -q
+```
+
+**Reproducibility note:** A committed `frontend/package-lock.json` and CI migration to `npm ci` remain an open dependency-reproducibility gate before persistent encrypted storage. Do not generate or claim a verified lockfile without reviewing the resolved dependency tree.
+
+## Original Streamlit demonstrator (legacy)
+
+The repository preserves the earlier Streamlit prototype at the root. It includes the original rules-first screening interface and a separate synthetic-cohort machine-learning second opinion.
+
+Legacy hosted URL: [https://future-health-male-triage.streamlit.app/](https://future-health-male-triage.streamlit.app/)
+
+This URL is the **legacy Streamlit demonstrator**, not the current React V2 build. Its behaviour and interface may differ from V2.
+
+Run the legacy version locally:
+
+```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-The app opens at <http://localhost:8501>.
+The legacy model uses a project-generated synthetic cohort and a small gradient-boosted model with feature-attribution explanations. It is research/demo code only. Its predictions are not clinically validated, and its output is not part of the current React V2 screening workflow.
 
-## Project layout
+## Evidence and evaluation
 
-```
-future-health-male-triage/
-├── app.py                    # Streamlit UI, design system and result rendering
-├── triage.py                 # Rule engine: Intake, Triage, Band, evaluate(), compute_factors()
-├── model.py                  # XGBoost / NumPy boosted-tree second opinion + cautious arbitrator
-├── cohort.py                 # Simulated cohort generator used for training and evaluation
-├── vignettes.py              # 60 written test vignettes
-├── evaluate_report.py        # Builds EVALUATION_REPORT.md and vignettes_appendix.csv
-├── EVALUATION_REPORT.md      # Shown in the app's Evidence tab
-├── vignettes_appendix.csv    # Shown in the app's Evidence tab
-├── test_*.py                 # pytest suites for triage, cohort, model, vignettes and the report
-├── requirements.txt
-└── .streamlit/
-    └── config.toml           # Dark theme, accent colour, telemetry off
-```
+- The original project includes 60 written test vignettes authored against the designed triage protocol.
+- Automated test suites cover triage behaviour, API mapping, cohort generation, model behaviour, vignettes and report generation.
+- The legacy model is trained on synthetic data generated by project code; no real patient dataset is claimed.
+- Vignette agreement measures consistency with the written protocol, not clinical accuracy.
+- No clinical sensitivity, specificity, AUC, calibration, fairness or patient-outcome claim is made.
 
-> `config.toml` must sit inside a `.streamlit` folder next to `app.py`. If it is in the project root, Streamlit will not read it.
+## M4.1 encryption research status
 
-## Using the app
+M4.1 is an **isolated proof of concept using dummy data only**. It explores browser cryptography, Argon2id, AES-GCM, a DEK/KEK key hierarchy and an optional offline recovery mechanism.
 
-The interface has three tabs:
+- The spike is not imported by the React application.
+- It does not read or write health records.
+- It does not use browser storage or IndexedDB.
+- It does not enable persistent vault functionality.
+- The mobile benchmark measures Argon2id derivation plus Web Crypto key import; it is not a complete vault-unlock or record-decryption benchmark.
+- Two AI-assisted technical pre-reviews have been collected. They are not independent human audits.
+- Independent human cryptographic review, final KDF/dependency decisions, production schema review and other entry gates remain pending.
 
-- **Check:** a four-step guided questionnaire (urgent symptoms, about you, your history, health and lifestyle), then the result.
-- **How it works:** the method, privacy and limits in plain language.
-- **Evidence:** the evaluation report and the vignette appendix.
+**M4.2 IndexedDB persistence remains blocked.** Do not enable persistent health-record storage until the independent review is completed and the documented security gates are satisfied.
 
-The result screen shows, in order: the recommended next step and timeframe, what to do, the factors that shaped the result (from the rules and from the model), follow-up options (a clinician summary download and a teleconsultation request, which is a demo and sends nothing), safety information, and expandable technical details.
+Read the current documents:
 
-## Testing and evaluation
+- [M4.1 benchmark and security pre-review](docs/LOC_V2_M4_1_BENCHMARK_AND_SECURITY_REVIEW.md)
+- [Independent cryptographic review brief](docs/LOC_V2_M4_1_INDEPENDENT_CRYPTO_REVIEW_BRIEF.md)
+- [M4.1 crypto spike](docs/LOC_V2_M4_1_CRYPTO_SPIKE.md)
+- [Encrypted storage architecture proposal](docs/LOC_V2_ENCRYPTED_STORAGE_ARCHITECTURE.md)
+- [Tracking issue #13](https://github.com/SanchitKRai/future-health-male-triage/issues/13)
 
-```bash
-pytest                       # unit tests and vignette checks
-python evaluate_report.py    # regenerate EVALUATION_REPORT.md and vignettes_appendix.csv
-python model.py              # print train/test metrics for the model on the simulated cohort
-```
+## Clinical, privacy and safety safeguards
 
-### How to read the evidence
+1. Emergency red flags must never be downgraded by an ML model.
+2. Unknown or skipped responses must not be silently treated as “No”.
+3. The existing Python engine remains the source of screening decisions.
+4. Timeline records do not modify the existing triage score.
+5. Trend views must not mix different metrics or units.
+6. Synthetic cohort and vignette results are not clinical validation.
+7. No sensitive information is sent to third parties by design in the local V2 workflow.
+8. Local browser memory is not secure persistence; no production-vault protection is claimed.
+9. Any clinical pilot requires clinical ownership, appropriate governance and ethics review, prospective validation, privacy/security assessment and approved clinical workflows.
 
-The cohort is simulated from published estimates, and the 60 vignettes were written against the same protocol. Vignette results therefore show **agreement with the protocol**, not clinical accuracy. Sensitivity and fairness figures show how the pipeline behaves, not real-world equity. Validating on real clinical data is the main step needed before any real use.
+## Project documentation
 
-## Design notes
+- [LOC V2 implementation plan](docs/LOC_V2_IMPLEMENTATION_PLAN.md)
+- [Data and API boundaries](docs/LOC_V2_DATA_AND_API_BOUNDARIES.md)
+- [Guided screening flow](docs/LOC_V2_SCREENING_FLOW.md)
+- [Frontend setup and current capabilities](frontend/README.md)
+- [M4.1 security review brief](docs/LOC_V2_M4_1_INDEPENDENT_CRYPTO_REVIEW_BRIEF.md)
 
-The UI is built on a small set of CSS design tokens in `app.py` (colour, type scale, spacing, radii, control heights), with a charcoal-green background, a teal accent and warm off-white information cards.
+## Licence
 
-- Every card sets its own background and text colours, so it reads the same in any Streamlit theme. Body text meets WCAG AA contrast.
-- Urgency is always stated in words as well as colour.
-- Controls are at least 44px tall, with one consistent keyboard-focus ring and reduced-motion support.
-- Layout is a single reading column that adapts down to narrow phone screens.
-
-## Limitations and next steps
-
-- Rule thresholds are unreviewed design defaults and need clinical sign-off.
-- The model is trained on simulated data only. Skipped answers are treated as neutral at inference, and the lasting fix is to simulate missingness in `cohort.py`.
-- The questionnaire is English only.
-- The teleconsultation flow is a mock-up.
-- Next: clinical review of the protocol, validation against real-world data, localisation, and a formal accessibility audit with assistive-technology users.
+The repository declares the MIT License. See [LICENSE](LICENSE). Third-party packages, fonts and other external materials retain their own licences and attribution requirements.
 
 ## Disclaimer
 
-This software is a research and demonstration prototype. It does not provide medical advice, diagnosis or treatment. In an emergency, contact your local emergency number or go to the nearest emergency department.
+This software is a research and demonstration prototype, not a medical device or clinical service. It does not provide medical advice, diagnosis or treatment. Do not use it to make or delay a medical decision. In an emergency, contact local emergency services or go to the nearest emergency department.
