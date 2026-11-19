@@ -115,7 +115,7 @@ Both wrappers must be authenticated independently. The recovery wrapper is optio
 - OWASP currently prefers Argon2id for password-based protection. A browser implementation would require selecting and auditing a maintained WASM/library dependency, pinning its version and benchmarking memory/CPU on supported devices.
 - If a FIPS-constrained deployment is later required, evaluate PBKDF2-HMAC-SHA-256 using the applicable reviewed parameters; OWASP lists 600,000 iterations for that context. LOC must not claim FIPS compliance merely because it uses PBKDF2.
 - Do not silently downgrade to a fast hash, a short PIN, or an unreviewed KDF when a preferred implementation is unavailable.
-- Select exact parameters only after device benchmarking and security review. Store KDF parameters with the vault so they can be upgraded through a versioned re-wrap process.
+- The M4.1 spike baseline is 19,456 KiB, 2 iterations, parallelism 1, and a 32-byte output, matching OWASP's documented Argon2id minimum. These values are a benchmark candidate, not a production default. Select final parameters only after device benchmarking and security review. Store KDF parameters with the vault so they can be upgraded through a versioned re-wrap process.
 
 Reference: [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
 
