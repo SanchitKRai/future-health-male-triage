@@ -90,20 +90,24 @@ HKDF is used only for the high-entropy random recovery secret, not for a human-c
 - Old exported backups may retain old wrapper envelopes after credential rotation. Rotation cannot revoke copies already exported.
 - WebCrypto's non-extractable key does not protect against malicious same-origin code that can invoke operations while the vault is unlocked.
 
-## Verification recorded for PR #11
+## Verification recorded for M4.1
 
-- [x] Frontend TypeScript check and production build passed on the latest PR commit.
-- [x] All 22 frontend tests passed in CI, including the crypto-spike tests.
-- [x] Existing Python regression suite passed unchanged (127 tests).
-- [x] Dummy record ciphertext was further bound to vault ID, record ID and format version.
+- [x] Frontend TypeScript check and production build passed on PR #11.
+- [x] 22 frontend tests passed in CI on PR #11.
+- [x] Existing Python regression suite passed unchanged (127 tests) on PR #11.
+- [x] Dummy record ciphertext is bound to vault ID, record ID and format version.
+- [x] The follow-up benchmark/review branch passes frontend production build and all 25 frontend tests.
+- [x] The follow-up branch passes the unchanged Python regression suite (127 tests).
+- [x] The follow-up branch includes bounded runtime validation for the dummy envelope and credential object.
 
-CI run: https://github.com/SanchitKRai/future-health-male-triage/actions/runs/44455904664
+Follow-up CI run: https://github.com/SanchitKRai/future-health-male-triage/actions/runs/44463216661
 
 ## Exit criteria before M4.2
 
 - [x] Frontend production build passes.
-- [x] All crypto-spike tests pass in CI.
-- [x] Existing Python regression suite passes unchanged.
+- [x] All crypto-spike and benchmark unit tests pass in CI (25 frontend tests total on the follow-up branch).
+- [x] Existing Python regression suite passes unchanged (127 tests).
+- [x] Local on-device benchmark runner is implemented.
 - [x] Add a local-only Argon2id benchmark runner that uses dummy data and never sends results.
 - [ ] Collect benchmark reports on supported desktop, lower-end Android and mobile Safari devices.
 - [ ] Review recovery phrase word encoding, confirmation UX and offline storage guidance.
