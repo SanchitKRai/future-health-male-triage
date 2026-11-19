@@ -19,12 +19,19 @@ const RECOVERY_DOMAIN = "LOC vault recovery KEK v1";
 const DUMMY_RECORD_ID = "loc-crypto-spike-dummy-record";
 export const DUMMY_PLAINTEXT = "LOC crypto spike: synthetic test payload only; not health information.";
 
-export interface Argon2idParams { memorySizeKiB: number; iterations: number; parallelism: number; hashLength: number; }\n\nexport const SPIKE_ARGON2ID_PARAMS: Argon2idParams = {
+export interface Argon2idParams {
+  memorySizeKiB: number;
+  iterations: number;
+  parallelism: number;
+  hashLength: number;
+}
+
+export const SPIKE_ARGON2ID_PARAMS: Argon2idParams = {
   memorySizeKiB: 19_456,
   iterations: 2,
   parallelism: 1,
   hashLength: 32,
-});
+};
 
 type WrapperKind = "passphrase" | "recovery";
 type KdfKind = "argon2id-v1.3" | "hkdf-sha256";
@@ -329,8 +336,8 @@ async function unwrapDek(
 
   let wrappingKey: CryptoKey;
   if (credential.kind === "passphrase") {
-    if (wrapper.kdf !== "argon2id-v1.3" || !wrapper.argon2id) {
-      throw new CryptoSpikeError("Unsupported passphrase KDF metadata.");
+    if (wrapper.kdf !== "argon2id-v1.3" || !hasSupportedArgon2idParams(wrapper.argon2id)) {
+      throw new CryptoSpikeError("Unsupported passphrase KDF metadata or parameters.");
     }
     wrappingKey = await derivePassphraseKey(credential.secret, salt, wrapper.argon2id);
   } else {
