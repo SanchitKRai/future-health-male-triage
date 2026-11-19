@@ -68,7 +68,10 @@ The local API is required for React to use the existing Python rules engine. The
 ### M4 — Encrypted local storage (design first)
 - [x] Draft threat model and encrypted-storage architecture proposal.
 - [ ] Approve final KDF parameters, key hierarchy and browser support matrix after crypto review.
-- [x] Build an isolated Web Crypto + Argon2id + BIP-39/HKDF spike with dummy data only (CI and device benchmarks pending).
+- [x] Build an isolated Web Crypto + Argon2id + BIP-39/HKDF spike with dummy data only.
+- [x] Pass frontend build, 22 frontend tests and 127 unchanged Python regression tests in CI.
+- [ ] Benchmark Argon2id on supported desktop and lower-end mobile devices.
+- [ ] Independent cryptographic review of envelope, key derivation, AAD and rotation.
 - [ ] Implement versioned IndexedDB adapter with no plaintext health metadata.
 - [ ] Add explicit opt-in, passphrase, unlock, lock and inactivity lock.
 - [ ] Add encrypted backup/restore, passphrase change and deletion flows.
