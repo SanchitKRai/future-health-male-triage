@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [loc-v2-m2-foundation, loc-v2-screening-flow, loc-v2-health-timeline, loc-v2-m4-crypto-spike]
+    branches: [loc-v2-m2-foundation, loc-v2-screening-flow, loc-v2-health-timeline, loc-v2-m4-crypto-spike, loc-v2-m4-benchmark-review]
 
 permissions:
   contents: read
