@@ -2,7 +2,7 @@
 
 **Status:** Design proposal only — not implemented or enabled.
 
-**Decision requested:** Approve the threat model, key-management direction and acceptance gates before writing persistence code.
+**Recommended product decision:** Offer an optional offline recovery phrase at vault creation. It is a second user-held way to unwrap the vault key, not a server backdoor and not a substitute for an encrypted backup. This is a design recommendation; implementation remains gated on the crypto spike and security review.
 
 ## 1. Purpose and product boundary
 
@@ -60,7 +60,7 @@ One vault metadata record containing only the information required to unlock and
 - KDF identifier and parameters;
 - random KDF salt;
 - key-wrap IV;
-- wrapped DEK;
+- passphrase-wrapped DEK envelope (wrap type, IV and ciphertext);\n- optional recovery-wrapped DEK envelope (wrap type, recovery KDF/derivation salt, IV and ciphertext);
 - creation / last-updated timestamps that do not reveal health details.
 
 ### `encryptedRecords`
@@ -102,7 +102,7 @@ Preferred candidate:
 3. Use the KEK only to wrap/unwrap the DEK. Store the wrapped DEK, salt and KDF parameters; never store the passphrase or plaintext KEK.
 4. Use the DEK to encrypt each record independently with AES-GCM and a new IV.
 5. After unlock, keep the usable DEK as a non-extractable CryptoKey where supported. Drop the key reference and clear decrypted records from application state when locking.
-6. Change the passphrase by deriving a new KEK and re-wrapping the DEK; do not require rewriting every record.
+6. Change the passphrase by deriving a new KEK and re-wrapping the DEK; do not require rewriting every record.\n7. If the user opts into offline recovery, generate an independent 256-bit recovery secret with the browser cryptographic random generator. Encode it as a human-transcribable recovery phrase using a vetted, standard encoding implementation (encoding choice is an explicit crypto-spike decision; do not invent a custom word list).\n8. Derive a separate recovery KEK from the recovery secret using HKDF-SHA-256 with a fresh random salt and domain-separated context such as `LOC vault recovery KEK v1`. HKDF is appropriate here because the recovery secret is already high-entropy random material; do not use HKDF to stretch a human-chosen password.\n9. Wrap the same DEK independently under the passphrase KEK and recovery KEK, using separate fresh AES-GCM IVs and AAD that binds the vault ID, format version and wrap type. Store both authenticated wrappers, but never store the recovery phrase or the unwrapped recovery KEK.\n10. The recovery phrase is shown once at creation. Offer a user-initiated print/download or copy action with a clear warning that anyone who obtains the phrase can unlock the vault. Ask the user to confirm they have stored it offline (for example, by re-entering selected words) before marking recovery as configured.
 
 The wrapping algorithm and exact Web Crypto key import/export sequence must be proven in a small crypto spike and reviewed before implementation. Do not improvise a custom envelope or key format.
 
@@ -183,7 +183,7 @@ OWASP warns that IndexedDB content can be read or modified by same-origin script
 
 Before turning persistence ON, add automated tests for:
 
-- Passphrase-to-key derivation and unlock with correct/wrong passphrase.
+- Passphrase-to-key derivation and unlock with correct/wrong passphrase.\n- Recovery-phrase entropy generation, encoding/decoding and checksum/error detection.\n- Recovery unlock with correct phrase and fail-closed behaviour for mistyped/incorrect phrase.\n- Passphrase recovery rotates the active passphrase wrapper and recovery wrapper without re-encrypting record ciphertext.\n- Recovery phrase is never present in IndexedDB, logs, network requests, crash reports or automatic downloads.\n- User can opt out of recovery and still create/use a passphrase-only vault.
 - Encryption/decryption round trip for every health-record union type.
 - Tampered ciphertext, IV, record ID, AAD, salt, wrapped DEK and format version fail closed.
 - Each encryption operation uses a fresh random IV.
@@ -205,7 +205,7 @@ Manual security review must include XSS threat review, CSP inspection, dependenc
 2. **M4.2 — Vault metadata and IndexedDB adapter:** schema/versioning and transactions, with no UI persistence toggle yet.
 3. **M4.3 — Consent and lock/unlock UX:** guest mode remains first; opt-in creation, unlock, manual lock and inactivity lock.
 4. **M4.4 — Encrypted repository integration:** move validated record objects between Zustand memory and the encrypted repository only after unlock.
-5. **M4.5 — Backup, restore, passphrase change and delete:** test recovery and failure cases.
+5. **M4.5 — Offline recovery:** generate/verify optional recovery phrase, unlock with it, require new passphrase, rotate wrappers and test old credential invalidation.\n6. **M4.6 — Backup, restore, passphrase change and delete:** encrypted backup/restore, credential rotation and deletion semantics.\n7. **M4.7 — Security and mobile QA:** XSS/CSP, dependency audit, browser tests, storage inspection and usability review.
 6. **M4.6 — Security and mobile QA:** XSS/CSP, dependency audit, browser tests, storage inspection and usability review.
 
 **Release gate:** persistent storage remains disabled until all automated tests, manual checks and independent design review are complete.
@@ -214,7 +214,7 @@ Manual security review must include XSS threat review, CSP inspection, dependenc
 
 - Is LOC strictly single-device, or should encrypted backup/restore be a first-class supported workflow?
 - Should auto-lock be 5 minutes, configurable, or both?
-- Should a forgotten passphrase mean permanent loss, or should users be able to create an offline recovery key during setup?
+- **Recovery-key product decision (recommended):** offer an optional offline recovery phrase generated during vault creation. Confirm the encoding format and user verification flow in the crypto spike.
 - Which browsers/devices are in the supported matrix, especially mobile Safari and Android browsers?
 - Is any formal compliance target (for example FIPS) required? Do not imply one without an explicit requirement and validated implementation.
 
