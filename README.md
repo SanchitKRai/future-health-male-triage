@@ -91,7 +91,7 @@ The API is expected at `http://127.0.0.1:8000`. Useful checks:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -115,7 +115,7 @@ Python regression tests from the repository root:
 python -m pytest -q
 ```
 
-**Reproducibility note:** A committed `frontend/package-lock.json` and CI migration to `npm ci` remain an open dependency-reproducibility gate before persistent encrypted storage. Do not generate or claim a verified lockfile without reviewing the resolved dependency tree.
+**Reproducibility note:** `frontend/package-lock.json` is committed and frontend CI uses `npm ci`. Review the resolved dependency tree and crypto package provenance before persistent encrypted storage.
 
 ## Original Streamlit demonstrator (legacy)
 

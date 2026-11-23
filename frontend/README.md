@@ -29,7 +29,7 @@ The API binds to `127.0.0.1:8000` only. Access logging is disabled, the host hea
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
