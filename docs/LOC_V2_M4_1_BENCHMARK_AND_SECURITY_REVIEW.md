@@ -11,7 +11,7 @@
 
    ```bash
    cd frontend
-   npm install
+   npm ci
    npm run dev
    ```
 
@@ -102,9 +102,9 @@ Scope: `frontend/src/crypto-spike/vaultCryptoSpike.ts`, its unit tests and the b
 
 #### SR-03 — Dependency reproducibility and provenance
 
-**Risk:** The repository currently has no committed `frontend/package-lock.json`, and CI uses `npm install`. Transitive dependency resolution can therefore change between runs.
+**Risk:** Transitive dependency resolution can change unless the repository pins and reviews a committed dependency lockfile.
 
-**Action before M4.2:** Generate and commit the npm lockfile from a trusted environment, change CI to `npm ci`, review package provenance and integrity hashes, and audit the WASM and mnemonic dependencies. Do not fabricate a lockfile.
+**Status:** `frontend/package-lock.json` is committed and CI uses `npm ci`. Before M4.2, review package provenance and integrity hashes and audit the WASM and mnemonic dependencies.
 
 #### SR-04 — Argon2id parameters are a candidate, not a production decision
 
@@ -163,7 +163,7 @@ M4.2 must not start until all of the following are true:
 - [x] Initial desktop baseline and nine mobile-session reports collected; all stored mobile session medians/minima/maxima checked against their five raw samples.
 - [ ] Formal supported browser/device matrix and acceptable unlock latency approved.
 - [ ] Final Argon2id parameters and dependency versions approved.
-- [ ] `package-lock.json` committed and CI switched to `npm ci`.
+- [x] `package-lock.json` committed and CI switched to `npm ci`.
 - [ ] Independent cryptographic review completed and findings resolved or explicitly accepted.
 - [ ] Production envelope/runtime schema reviewed separately from the dummy spike.
 - [ ] DEK-compromise response distinguished from credential rotation.

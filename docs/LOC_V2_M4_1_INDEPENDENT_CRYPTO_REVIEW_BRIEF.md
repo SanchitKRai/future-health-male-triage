@@ -152,7 +152,7 @@ These are review prompts, not conclusions that a vulnerability exists:
 - The benchmark helper clears salt on its normal success path; inspect exceptional paths and decide whether any additional cleanup is warranted.
 - The code is not designed for production record sizes, concurrent writes, IndexedDB transactions, migrations or backups.
 - No independent cryptographic review has yet been performed.
-- `frontend/package-lock.json` is not committed and the current CI workflow runs `npm install`, not `npm ci`. Dependency provenance and reproducibility remain blockers.
+- `frontend/package-lock.json` is committed and CI uses `npm ci`. Dependency provenance and the resolved dependency tree still require review before production use.
 - The internal review document was authored alongside the spike and must not be represented as an independent audit.
 
 ## 7. Expected reviewer deliverables
